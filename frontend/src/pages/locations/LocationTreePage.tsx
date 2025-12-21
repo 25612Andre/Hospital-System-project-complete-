@@ -1,0 +1,304 @@
+import React, { useState, useEffect } from 'react';
+import { toast } from 'react-toastify';
+import locationApi from '../../api/locationApi';
+import type { LocationDTO, LocationType } from '../../api/locationApi';
+
+const typeHierarchy: LocationType[] = ['PROVINCE', 'DISTRICT', 'SECTOR', 'CELL', 'VILLAGE'];
+
+const typeLabels: Record<LocationType, string> = {
+  PROVINCE: 'Provinces',
+  DISTRICT: 'Districts',
+  SECTOR: 'Sectors',
+  CELL: 'Cells',
+  VILLAGE: 'Villages',
+};
+
+const typeColors: Record<LocationType, string> = {
+  PROVINCE: '#6366f1',
+  DISTRICT: '#8b5cf6',
+  SECTOR: '#ec4899',
+  CELL: '#f59e0b',
+  VILLAGE: '#10b981',
+};
+
+interface BreadcrumbItem {
+  id: number | null;
+  name: string;
+  type: LocationType | null;
+}
+
+export default function LocationTreePage() {
+  const [locations, setLocations] = useState<LocationDTO[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [breadcrumbs, setBreadcrumbs] = useState<BreadcrumbItem[]>([
+    { id: null, name: 'All Provinces', type: null }
+  ]);
+  const [currentParentId, setCurrentParentId] = useState<number | null>(null);
+  const [currentLevel, setCurrentLevel] = useState<LocationType>('PROVINCE');
+  const [typeCounts, setTypeCounts] = useState<Record<LocationType, number>>({
+    PROVINCE: 0,
+    DISTRICT: 0,
+    SECTOR: 0,
+    CELL: 0,
+    VILLAGE: 0,
+  });
+
+  // Load locations based on current navigation
+  const loadLocations = async () => {
+    setLoading(true);
+    try {
+      let data: LocationDTO[];
+      if (searchTerm.trim()) {
+        const response = await locationApi.filter({ q: searchTerm, size: 100 });
+        data = response.content;
+      } else if (currentParentId === null) {
+        data = await locationApi.byType('PROVINCE');
+      } else {
+        data = await locationApi.children(currentParentId);
+      }
+      setLocations(data);
+    } catch (err) {
+      toast.error('Failed to load locations');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load counts for each type
+  const loadCounts = async () => {
+    try {
+      const counts: Record<LocationType, number> = {
+        PROVINCE: 0, DISTRICT: 0, SECTOR: 0, CELL: 0, VILLAGE: 0,
+      };
+      for (const type of typeHierarchy) {
+        const locs = await locationApi.byType(type);
+        counts[type] = locs.length;
+      }
+      setTypeCounts(counts);
+    } catch (err) {
+      console.error('Failed to load counts', err);
+    }
+  };
+
+  useEffect(() => {
+    loadLocations();
+  }, [currentParentId, searchTerm]);
+
+  useEffect(() => {
+    loadCounts();
+  }, []);
+
+  // Navigate into a location (drill down)
+  const handleDrillDown = (location: LocationDTO) => {
+    const currentTypeIndex = typeHierarchy.indexOf(location.type);
+    if (currentTypeIndex < typeHierarchy.length - 1) {
+      setBreadcrumbs([...breadcrumbs, { id: location.id, name: location.name, type: location.type }]);
+      setCurrentParentId(location.id);
+      setCurrentLevel(typeHierarchy[currentTypeIndex + 1]);
+      setSearchTerm('');
+    }
+  };
+
+  // Navigate back via breadcrumb
+  const handleBreadcrumbClick = (index: number) => {
+    const newBreadcrumbs = breadcrumbs.slice(0, index + 1);
+    setBreadcrumbs(newBreadcrumbs);
+    const lastItem = newBreadcrumbs[newBreadcrumbs.length - 1];
+    setCurrentParentId(lastItem.id);
+    if (lastItem.type === null) {
+      setCurrentLevel('PROVINCE');
+    } else {
+      const typeIndex = typeHierarchy.indexOf(lastItem.type);
+      setCurrentLevel(typeHierarchy[Math.min(typeIndex + 1, typeHierarchy.length - 1)]);
+    }
+  };
+
+  const getNextLevelLabel = (type: LocationType): string => {
+    const index = typeHierarchy.indexOf(type);
+    if (index < typeHierarchy.length - 1) {
+      return typeLabels[typeHierarchy[index + 1]];
+    }
+    return '';
+  };
+
+  return (
+    <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
+      {/* Header */}
+      <div style={{
+        background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)',
+        borderRadius: '16px',
+        padding: '2rem',
+        marginBottom: '2rem',
+        color: 'white',
+        boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
+      }}>
+        <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 700 }}>📍 Locations</h1>
+        <p style={{ margin: '0.5rem 0 0', opacity: 0.8, fontSize: '0.95rem' }}>
+          Browse: Province → District → Sector → Cell → Village
+        </p>
+
+        {/* Stats Cards */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
+          gap: '0.75rem',
+          marginTop: '1.5rem'
+        }}>
+          {typeHierarchy.map(type => (
+            <div
+              key={type}
+              style={{
+                background: currentLevel === type ? typeColors[type] : 'rgba(255,255,255,0.1)',
+                borderRadius: '10px',
+                padding: '0.75rem',
+                textAlign: 'center',
+                transition: 'all 0.2s ease'
+              }}
+            >
+              <div style={{ fontSize: '1.25rem', fontWeight: 700 }}>{typeCounts[type].toLocaleString()}</div>
+              <div style={{ fontSize: '0.7rem', opacity: 0.9, textTransform: 'uppercase' }}>{typeLabels[type]}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Breadcrumb Navigation */}
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '0.5rem',
+        marginBottom: '1.5rem',
+        flexWrap: 'wrap',
+        background: '#f8fafc',
+        padding: '0.75rem 1rem',
+        borderRadius: '10px',
+        border: '1px solid #e2e8f0'
+      }}>
+        <span style={{ color: '#64748b', marginRight: '0.25rem' }}>📂</span>
+        {breadcrumbs.map((crumb, index) => (
+          <React.Fragment key={index}>
+            {index > 0 && <span style={{ color: '#cbd5e1' }}>›</span>}
+            <button
+              onClick={() => handleBreadcrumbClick(index)}
+              style={{
+                background: index === breadcrumbs.length - 1 ? '#1e293b' : 'transparent',
+                color: index === breadcrumbs.length - 1 ? 'white' : '#475569',
+                border: 'none',
+                padding: '0.35rem 0.6rem',
+                borderRadius: '5px',
+                cursor: 'pointer',
+                fontSize: '0.85rem',
+                fontWeight: index === breadcrumbs.length - 1 ? 600 : 400
+              }}
+            >
+              {crumb.name}
+            </button>
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* Search Bar */}
+      <div style={{ marginBottom: '1.5rem' }}>
+        <input
+          type="text"
+          placeholder="🔍 Search locations..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          style={{
+            width: '100%',
+            padding: '0.875rem 1rem',
+            fontSize: '0.95rem',
+            border: '2px solid #e2e8f0',
+            borderRadius: '10px',
+            outline: 'none',
+            boxSizing: 'border-box'
+          }}
+        />
+      </div>
+
+      {/* Current Level Label */}
+      {!searchTerm && (
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+          <h2 style={{ margin: 0, fontSize: '1.1rem', color: '#1e293b', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ width: '10px', height: '10px', background: typeColors[currentLevel], borderRadius: '2px' }}></span>
+            {typeLabels[currentLevel]}
+          </h2>
+          <span style={{ color: '#64748b', fontSize: '0.85rem' }}>{locations.length} items</span>
+        </div>
+      )}
+
+      {/* Locations Grid */}
+      {loading ? (
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '3rem', color: '#64748b' }}>
+          Loading...
+        </div>
+      ) : locations.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '3rem', background: '#f8fafc', borderRadius: '12px', color: '#64748b' }}>
+          <div style={{ fontSize: '2.5rem', marginBottom: '0.5rem' }}>📭</div>
+          <p>{searchTerm ? 'No locations match your search' : 'No locations at this level'}</p>
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '1rem' }}>
+          {locations.map(loc => {
+            const canDrillDown = typeHierarchy.indexOf(loc.type) < typeHierarchy.length - 1;
+            return (
+              <div
+                key={loc.id}
+                onClick={() => canDrillDown && handleDrillDown(loc)}
+                style={{
+                  background: 'white',
+                  borderRadius: '10px',
+                  padding: '1rem',
+                  border: '1px solid #e2e8f0',
+                  cursor: canDrillDown ? 'pointer' : 'default',
+                  transition: 'all 0.2s ease',
+                  position: 'relative'
+                }}
+                onMouseEnter={(e) => {
+                  if (canDrillDown) {
+                    e.currentTarget.style.borderColor = typeColors[loc.type];
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.08)';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = '#e2e8f0';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+              >
+                {/* Type Badge */}
+                <div style={{
+                  position: 'absolute', top: 0, right: 0,
+                  background: typeColors[loc.type],
+                  color: 'white',
+                  fontSize: '0.6rem',
+                  fontWeight: 600,
+                  padding: '0.2rem 0.5rem',
+                  borderRadius: '0 10px 0 6px',
+                  textTransform: 'uppercase'
+                }}>
+                  {loc.type}
+                </div>
+
+                <div style={{ fontSize: '0.7rem', color: '#94a3b8', fontFamily: 'monospace', marginBottom: '0.25rem' }}>
+                  {loc.code}
+                </div>
+                <div style={{ fontSize: '1rem', fontWeight: 600, color: '#1e293b', marginBottom: '0.25rem' }}>
+                  {loc.name}
+                </div>
+                {loc.path && (
+                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>📍 {loc.path}</div>
+                )}
+                {canDrillDown && (
+                  <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: typeColors[loc.type] }}>
+                    View {getNextLevelLabel(loc.type)} →
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,12 @@
+INSERT INTO departments (name, consultation_fee) SELECT 'General Medicine', 5000.00 WHERE NOT EXISTS (SELECT 1 FROM departments WHERE name = 'General Medicine');
+INSERT INTO departments (name, consultation_fee) SELECT 'Pediatrics', 10000.00 WHERE NOT EXISTS (SELECT 1 FROM departments WHERE name = 'Pediatrics');
+INSERT INTO departments (name, consultation_fee) SELECT 'Cardiology', 15000.00 WHERE NOT EXISTS (SELECT 1 FROM departments WHERE name = 'Cardiology');
+INSERT INTO departments (name, consultation_fee) SELECT 'Dermatology', 12000.00 WHERE NOT EXISTS (SELECT 1 FROM departments WHERE name = 'Dermatology');
+INSERT INTO departments (name, consultation_fee) SELECT 'Orthopedics', 65000.00 WHERE NOT EXISTS (SELECT 1 FROM departments WHERE name = 'Orthopedics');
+INSERT INTO departments (name, consultation_fee) SELECT 'Gynecology', 12000.00 WHERE NOT EXISTS (SELECT 1 FROM departments WHERE name = 'Gynecology');
+INSERT INTO departments (name, consultation_fee) SELECT 'Neurology', 20000.00 WHERE NOT EXISTS (SELECT 1 FROM departments WHERE name = 'Neurology');
+INSERT INTO departments (name, consultation_fee) SELECT 'Dentistry', 10000.00 WHERE NOT EXISTS (SELECT 1 FROM departments WHERE name = 'Dentistry');
+INSERT INTO departments (name, consultation_fee) SELECT 'Ophthalmology', 10000.00 WHERE NOT EXISTS (SELECT 1 FROM departments WHERE name = 'Ophthalmology');
+INSERT INTO departments (name, consultation_fee) SELECT 'ENT', 10000.00 WHERE NOT EXISTS (SELECT 1 FROM departments WHERE name = 'ENT');
+INSERT INTO departments (name, consultation_fee) SELECT 'Surgery', 25000.00 WHERE NOT EXISTS (SELECT 1 FROM departments WHERE name = 'Surgery');
+INSERT INTO departments (name, consultation_fee) SELECT 'Psychiatry', 15000.00 WHERE NOT EXISTS (SELECT 1 FROM departments WHERE name = 'Psychiatry');
