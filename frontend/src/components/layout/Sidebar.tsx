@@ -13,6 +13,7 @@ const links: Array<{ to: string; label: string; roles?: Role[] }> = [
   { to: "/locations", label: "Locations", roles: ["ADMIN"] },
   { to: "/users", label: "Users", roles: ["ADMIN"] },
   { to: "/roles", label: "Roles", roles: ["ADMIN"] },
+  { to: "/notifications", label: "Audit Logs", roles: ["ADMIN"] },
 ];
 
 const Sidebar: React.FC = () => {
@@ -20,9 +21,9 @@ const Sidebar: React.FC = () => {
   const allowedLinks = links.filter((link) => !link.roles || (user && link.roles.includes(user.role as Role)));
 
   return (
-    <aside className="w-64 bg-slate-950 text-slate-100 h-full flex flex-col border-r border-slate-900 shadow-xl">
+    <aside className="w-64 bg-slate-950 dark:bg-slate-950 text-slate-100 h-full flex flex-col border-r border-slate-900 dark:border-slate-800 shadow-xl transition-colors">
       <div className="px-5 py-4 border-b border-white/10">
-        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-200">Hospital</div>
+        <div className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-200 dark:text-primary-300">Hospital</div>
         <div className="mt-1 text-xl font-bold">Management Suite</div>
       </div>
       <div className="px-5 py-3 border-b border-white/10 text-xs uppercase tracking-wide text-slate-300">
@@ -41,7 +42,7 @@ const Sidebar: React.FC = () => {
               ].join(" ")
             }
           >
-            <span className="h-2 w-2 rounded-full bg-primary-400 opacity-70" />
+            <span className="h-2 w-2 rounded-full bg-primary-400 dark:bg-primary-500 opacity-70" />
             <span className="flex-1">{link.label}</span>
           </NavLink>
         ))}

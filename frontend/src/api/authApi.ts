@@ -70,8 +70,32 @@ export const authApi = {
     return data;
   },
 
-  signup: async (payload: SignupPayload) => {
-    const { data } = await httpClient.post("/auth/signup", payload);
+  signup: async (payload: SignupPayload, profilePicture?: File) => {
+    const formData = new FormData();
+
+    // Append each field individually for @ModelAttribute binding
+    formData.append('username', payload.username);
+    formData.append('password', payload.password);
+    formData.append('role', payload.role);
+
+    if (payload.fullName) formData.append('fullName', payload.fullName);
+    if (payload.age !== undefined) formData.append('age', payload.age.toString());
+    if (payload.gender) formData.append('gender', payload.gender);
+    if (payload.phone) formData.append('phone', payload.phone);
+    if (payload.locationId !== undefined) formData.append('locationId', payload.locationId.toString());
+    if (payload.departmentId !== undefined) formData.append('departmentId', payload.departmentId.toString());
+    if (payload.specialization) formData.append('specialization', payload.specialization);
+
+    // Append profile picture if provided
+    if (profilePicture) {
+      formData.append('profilePicture', profilePicture);
+    }
+
+    const { data } = await httpClient.post("/auth/signup", formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
     return data;
   },
 };

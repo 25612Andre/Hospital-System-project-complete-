@@ -49,6 +49,9 @@ public class Patient {
     @Column(nullable = false, unique = true)
     private String phone;
 
+    @Column(name = "profile_picture_url", length = 500)
+    private String profilePictureUrl;
+
     @ManyToOne
     @JoinColumn(name = "location_id")
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"parent", "children", "patients", "users"})

@@ -149,16 +149,41 @@ const SearchResultsPage: React.FC = () => {
               </h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {results.map((item) => (
-                <div
-                  key={`${bucket}-${item.id}`}
-                  className="border rounded-md p-3 text-sm hover:border-primary-200 transition-colors"
-                >
-                  <div className="text-xs uppercase tracking-wide text-slate-500">{item.type}</div>
-                  <div className="text-base font-semibold text-slate-800">{item.label}</div>
-                  <div className="text-slate-600">{item.detail}</div>
-                </div>
-              ))}
+              {results.map((item) => {
+                const routeMap: Record<string, string> = {
+                  patients: "/patients",
+                  doctors: "/doctors",
+                  appointments: "/appointments",
+                  bills: "/bills",
+                  departments: "/departments",
+                  locations: "/locations",
+                };
+                const targetPath = routeMap[bucket];
+
+                return (
+                  <button
+                    key={`${bucket}-${item.id}`}
+                    onClick={() => targetPath && navigate(`${targetPath}?highlight=${item.id}`)}
+                    className="border rounded-md p-3 text-sm hover:border-primary-400 hover:bg-primary-50 transition-all cursor-pointer text-left group"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs uppercase tracking-wide text-slate-500 mb-1">{item.type}</div>
+                        <div className="text-base font-semibold text-slate-900 group-hover:text-primary-700 transition-colors truncate">
+                          {item.label}
+                        </div>
+                        <div className="text-slate-600 text-xs mt-1 truncate">{item.detail}</div>
+                        <div className="text-xs text-slate-400 mt-1">ID: {item.id}</div>
+                      </div>
+                      <div className="flex-shrink-0 text-slate-400 group-hover:text-primary-600 transition-colors">
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
         ))}

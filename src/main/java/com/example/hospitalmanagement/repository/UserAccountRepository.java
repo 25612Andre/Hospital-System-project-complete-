@@ -14,6 +14,11 @@ import org.springframework.data.repository.query.Param;
 
 public interface UserAccountRepository extends JpaRepository<UserAccount, Long> {
     Optional<UserAccount> findByUsernameIgnoreCase(String username);
+    
+    // Alias for audit logging
+    default Optional<UserAccount> findByUsername(String username) {
+        return findByUsernameIgnoreCase(username);
+    }
 
     Page<UserAccount> findByUsernameContainingIgnoreCaseOrPatient_FullNameContainingIgnoreCase(
             String username, String fullName, Pageable pageable);

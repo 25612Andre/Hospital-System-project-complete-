@@ -40,6 +40,7 @@ public class UserAccountService {
     private final LocationService locationService;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
+    private final com.example.hospitalmanagement.service.FileStorageService fileStorageService;
 
     public List<UserAccount> getAll() {
         return userAccountRepository.findAll();
@@ -65,10 +66,28 @@ public class UserAccountService {
     }
 
     public UserAccount create(@NonNull UserAccountRequest req) {
+        return create(req, null);
+    }
+
+    public UserAccount create(@NonNull UserAccountRequest req, org.springframework.web.multipart.MultipartFile profilePicture) {
         // Trigger recompile
         ensureUsernameAvailable(req.getUsername(), null);
+        
+        // Handle profile picture upload
+        String profilePictureUrl = null;
+        if (profilePicture != null && !profilePicture.isEmpty()) {
+            if (!fileStorageService.isValidImageFile(profilePicture)) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid image file. Please upload JPG, PNG or GIF (max 5MB)");
+            }
+            try {
+                profilePictureUrl = fileStorageService.storeFile(profilePicture);
+            } catch (java.io.IOException e) {
+                throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to store profile picture");
+            }
+        }
+        
         UserAccount ua = new UserAccount();
-        bindCommonFields(ua, req, true);
+        bindCommonFields(ua, req, true, profilePictureUrl);
         return userAccountRepository.save(ua);
     }
 
@@ -134,7 +153,7 @@ public class UserAccountService {
         return userAccountRepository.save(user);
     }
 
-    private void bindCommonFields(UserAccount ua, UserAccountRequest req, boolean create) {
+    private void bindCommonFields(UserAccount ua, UserAccountRequest req, boolean create, String profilePictureUrl) {
         ua.setUsername(req.getUsername());
         if (req.getPassword() != null && !req.getPassword().isBlank()) {
             ua.setPassword(passwordEncoder.encode(req.getPassword()));
@@ -147,8 +166,13 @@ public class UserAccountService {
         }
         ua.setPatient(null);
         ua.setDoctor(null);
-        enforceRoleLinks(ua, req);
+        enforceRoleLinks(ua, req, profilePictureUrl);
         assignLocation(ua, req);
+    }
+    
+    // Overload for backward compatibility
+    private void bindCommonFields(UserAccount ua, UserAccountRequest req, boolean create) {
+        bindCommonFields(ua, req, create, null);
     }
 
     private void assignLocation(UserAccount ua, UserAccountRequest req) {
@@ -215,7 +239,8 @@ public class UserAccountService {
         return userAccountRepository.save(ua);
     }
     
-    private void enforceRoleLinks(UserAccount ua, UserAccountRequest req) {
+    
+    private void enforceRoleLinks(UserAccount ua, UserAccountRequest req, String profilePictureUrl) {
         Role role = req.getRole();
         if (role == Role.ADMIN) {
             ua.setPatient(null);
@@ -242,6 +267,7 @@ public class UserAccountService {
                 newPatient.setEmail(req.getUsername()); // Use username as email
                 newPatient.setPhone(req.getPhone());
                 newPatient.setLocation(location);
+                newPatient.setProfilePictureUrl(profilePictureUrl); // Set profile picture
                 
                 Patient saved = patientRepository.save(newPatient);
                 ua.setPatient(saved);
@@ -279,6 +305,7 @@ public class UserAccountService {
                         .specialization(req.getSpecialization() != null ? req.getSpecialization() : department.getName())
                         .department(department)
                         .location(doctorLocation)
+                        .profilePictureUrl(profilePictureUrl) // Set profile picture
                         .build();
 
                 Doctor saved = doctorRepository.save(newDoctor);
@@ -287,5 +314,10 @@ public class UserAccountService {
             // If neither doctorId nor fullName provided, leave doctor as null (admin can create unlinked user)
             ua.setPatient(null);
         }
+    }
+    
+    // Overload for backward compatibility
+    private void enforceRoleLinks(UserAccount ua, UserAccountRequest req) {
+        enforceRoleLinks(ua, req, null);
     }
 }

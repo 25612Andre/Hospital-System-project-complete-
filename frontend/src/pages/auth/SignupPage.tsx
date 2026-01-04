@@ -26,6 +26,8 @@ const SignupPage: React.FC = () => {
     departmentId: "",
     specialization: "",
   });
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [profilePreview, setProfilePreview] = useState<string>("");
 
   const { data: departments } = useQuery<Department[]>({
     queryKey: ["departments-all"],
@@ -70,11 +72,11 @@ const SignupPage: React.FC = () => {
         locationId: form.locationId || undefined,
         departmentId: (form.role === "DOCTOR" && form.departmentId) ? Number(form.departmentId) : undefined,
         specialization: (form.role === "DOCTOR") ? form.specialization : undefined,
-      });
+      }, profilePicture || undefined);
       toast.success("Account created successfully. Please login.");
       navigate("/login");
     } catch (err: any) {
-      const msg = err.response?.data?.message || err.message || "Signup failed.";
+      const msg = err.response?.data?.message || err.response?.data?.error || err.message || "Signup failed.";
       toast.error(msg);
     }
   };
@@ -99,6 +101,62 @@ const SignupPage: React.FC = () => {
             type="email"
             placeholder="user@example.com"
           />
+        </div>
+
+        {/* Profile Picture Upload */}
+        <div>
+          <label className="block text-sm font-medium text-slate-700 mb-2">Profile Picture (Optional)</label>
+          <div className="flex items-center gap-4">
+            {/* Preview */}
+            <div className="w-20 h-20 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center overflow-hidden">
+              {profilePreview ? (
+                <img src={profilePreview} alt="Profile preview" className="w-full h-full object-cover" />
+              ) : (
+                <svg className="w-10 h-10 text-slate-400" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                </svg>
+              )}
+            </div>
+            {/* Upload Button */}
+            <div className="flex-1">
+              <input
+                type="file"
+                id="profile-picture"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setProfilePicture(file);
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      setProfilePreview(reader.result as string);
+                    };
+                    reader.readAsDataURL(file);
+                  }
+                }}
+              />
+              <label
+                htmlFor="profile-picture"
+                className="inline-block cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+              >
+                📷 Choose Photo
+              </label>
+              {profilePicture && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setProfilePicture(null);
+                    setProfilePreview("");
+                  }}
+                  className="ml-2 text-sm text-red-600 hover:text-red-700"
+                >
+                  Remove
+                </button>
+              )}
+              <p className="text-xs text-slate-500 mt-1">JPG, PNG or GIF (max 5MB)</p>
+            </div>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">

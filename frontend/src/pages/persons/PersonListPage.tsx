@@ -19,7 +19,6 @@ const PersonListPage: React.FC = () => {
   const navigate = useNavigate();
   const { roles } = useAuth();
   const queryClient = useQueryClient();
-  const canWrite = roles.includes("ADMIN") || roles.includes("DOCTOR");
   const canDelete = roles.includes("ADMIN");
 
   const { data, isLoading } = useQuery<PagedResult<Person>>({
@@ -153,11 +152,6 @@ const PersonListPage: React.FC = () => {
                 <AppButton variant="secondary" onClick={() => navigate(`/patients/${row.id}`)}>
                   View
                 </AppButton>
-                {canWrite && (
-                  <AppButton variant="ghost" onClick={() => navigate(`/patients/${row.id}/edit`)}>
-                    Edit
-                  </AppButton>
-                )}
                 {canDelete && row.id && (
                   <AppButton variant="ghost" className="text-red-600 hover:bg-red-50 hover:text-red-700" onClick={() => handleDelete(row.id as number)}>
                     Delete

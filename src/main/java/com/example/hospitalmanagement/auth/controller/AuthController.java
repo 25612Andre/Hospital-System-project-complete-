@@ -136,9 +136,16 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/signup")
-    public ResponseEntity<UserAccount> signup(@Valid @RequestBody UserAccountRequest request) {
-        UserAccount created = userAccountService.create(request);
-        return ResponseEntity.ok(created);
+    @PostMapping(value = "/signup", consumes = {"multipart/form-data"})
+    public ResponseEntity<?> signup(
+            @Valid @org.springframework.web.bind.annotation.ModelAttribute UserAccountRequest request,
+            @org.springframework.web.bind.annotation.RequestParam(value = "profilePicture", required = false) 
+            org.springframework.web.multipart.MultipartFile profilePicture) {
+        try {
+            UserAccount created = userAccountService.create(request, profilePicture);
+            return ResponseEntity.ok(created);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
+        }
     }
 }

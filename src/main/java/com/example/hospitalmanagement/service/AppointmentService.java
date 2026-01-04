@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import com.example.hospitalmanagement.model.Appointment;
 import com.example.hospitalmanagement.model.Doctor;
 import com.example.hospitalmanagement.model.Patient;
+import com.example.hospitalmanagement.model.enums.AuditAction;
+import com.example.hospitalmanagement.model.enums.EntityType;
 import com.example.hospitalmanagement.repository.AppointmentRepository;
 import com.example.hospitalmanagement.repository.DoctorRepository;
 import com.example.hospitalmanagement.repository.PatientRepository;
@@ -33,6 +35,7 @@ public class AppointmentService {
     private final PatientRepository patientRepository;
     private final BillingRepository billingRepository;
     private final BillingService billingService;
+    private final AuditLogService auditLogService;
 
     public List<Appointment> getAll(Boolean unbilled) {
         if (Boolean.TRUE.equals(unbilled)) {
@@ -108,6 +111,16 @@ public class AppointmentService {
 
         Appointment saved = appointmentRepository.save(Objects.requireNonNull(appointment));
         
+        // Audit log
+        auditLogService.logAction(
+            EntityType.APPOINTMENT,
+            saved.getId(),
+            AuditAction.CREATE,
+            "Created new appointment for patient " + patient.getFullName() + " with doctor " + doctor.getName(),
+            null,
+            saved
+        );
+        
         try {
             billingService.generateBill(saved.getId());
         } catch (Exception e) {
@@ -126,6 +139,16 @@ public class AppointmentService {
                               Double consultationFee,
                               String notes) {
         Appointment existing = getById(id);
+        Appointment oldState = Appointment.builder()
+            .id(existing.getId())
+            .doctor(existing.getDoctor())
+            .patient(existing.getPatient())
+            .appointmentDate(existing.getAppointmentDate())
+            .status(existing.getStatus())
+            .consultationFee(existing.getConsultationFee())
+            .notes(existing.getNotes())
+            .build();
+        
         Doctor doctor = doctorId != null
                 ? doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"))
@@ -147,14 +170,41 @@ public class AppointmentService {
         if (notes != null) {
             existing.setNotes(notes);
         }
-        return appointmentRepository.save(existing);
+        Appointment updated = appointmentRepository.save(existing);
+        
+        // Audit log
+        String reason = "Updated appointment";
+        if (status != null && !status.equals(oldState.getStatus())) {
+            reason += " - Status changed from " + oldState.getStatus() + " to " + status;
+        }
+        auditLogService.logAction(
+            EntityType.APPOINTMENT,
+            updated.getId(),
+            AuditAction.UPDATE,
+            reason,
+            oldState,
+            updated
+        );
+        
+        return updated;
     }
 
     @Transactional
     public Appointment complete(@NonNull Long id) {
         Appointment appointment = getById(id);
+        String oldStatus = appointment.getStatus();
         appointment.setStatus("Completed");
         Appointment saved = appointmentRepository.save(appointment);
+        
+        // Audit log
+        auditLogService.logAction(
+            EntityType.APPOINTMENT,
+            saved.getId(),
+            AuditAction.APPROVE,
+            "Appointment completed - Status changed from " + oldStatus + " to Completed",
+            null,
+            saved
+        );
         
         // Only generate bill if one doesn't exist to avoid transaction rollback on conflict
         if (billingRepository.findByAppointment_Id(saved.getId()).isEmpty()) {
@@ -165,6 +215,18 @@ public class AppointmentService {
 
     @Transactional
     public void delete(@NonNull Long id) {
+        Appointment appointment = getById(id);
+        
+        // Audit log
+        auditLogService.logAction(
+            EntityType.APPOINTMENT,
+            id,
+            AuditAction.DELETE,
+            "Deleted appointment for patient " + appointment.getPatient().getFullName() + " with doctor " + appointment.getDoctor().getName(),
+            appointment,
+            null
+        );
+        
         billingRepository.findByAppointment_Id(id).forEach(billingRepository::delete);
         appointmentRepository.deleteById(id);
     }

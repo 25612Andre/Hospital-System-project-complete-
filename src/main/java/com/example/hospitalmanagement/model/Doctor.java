@@ -36,6 +36,9 @@ public class Doctor {
     @Column(nullable = false)
     private String specialization;
 
+    @Column(name = "profile_picture_url", length = 500)
+    private String profilePictureUrl;
+
     @NotNull
     @ManyToOne
     @JoinColumn(name = "department_id", nullable = false)
