@@ -12,6 +12,8 @@ import type { LocationNode } from "../../api/locationApi";
 import HierarchicalLocationPicker from "../../components/common/HierarchicalLocationPicker";
 import StatsBar from "../../components/common/StatsBar";
 import { useAuth } from "../../context/useAuth";
+import { userApi } from "../../api/userApi";
+import { useI18n } from "../../i18n/I18nProvider";
 
 const emptyForm: Doctor = {
   name: "",
@@ -22,11 +24,14 @@ const emptyForm: Doctor = {
 };
 
 const DoctorListPage: React.FC = () => {
+  const { t } = useI18n();
   const [page, setPage] = useState(0);
   const [size] = useState(10);
   const [term, setTerm] = useState("");
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<Doctor>(emptyForm);
+  const [form, setForm] = useState<Doctor & { username?: string; password?: string; confirm?: string }>(emptyForm);
+  const [profilePicture, setProfilePicture] = useState<File | null>(null);
+  const [profilePreview, setProfilePreview] = useState<string>("");
   const [editingId, setEditingId] = useState<number | null>(null);
   const queryClient = useQueryClient();
   const { roles } = useAuth();
@@ -51,6 +56,8 @@ const DoctorListPage: React.FC = () => {
 
   const resetForm = () => {
     setForm(emptyForm);
+    setProfilePicture(null);
+    setProfilePreview("");
     setEditingId(null);
     setShowForm(false);
   };
@@ -58,26 +65,45 @@ const DoctorListPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.department?.id) {
-      toast.error("Please select a department");
+      toast.error(t("doctors.validation.departmentRequired"));
       return;
     }
-    const payload: Doctor = {
-      ...form,
-      department: { id: Number(form.department.id), name: form.department.name },
-      location: form.location?.id ? { id: form.location.id } : undefined,
-    };
+
     try {
       if (editingId) {
+        const payload: Doctor = {
+          ...form,
+          department: { id: Number(form.department.id), name: form.department.name },
+          location: form.location?.id ? { id: form.location.id } : undefined,
+        };
         await doctorApi.update(editingId, payload);
-        toast.success("Doctor updated");
+        toast.success(t("doctors.toast.updated"));
       } else {
-        await doctorApi.create(payload);
-        toast.success("Doctor created");
+        if (!form.username || !form.password || !form.confirm) {
+          toast.error(t("appointments.toast.required"));
+          return;
+        }
+        if (form.password !== form.confirm) {
+          toast.error(t("signup.validation.passwordMismatch"));
+          return;
+        }
+        await userApi.create({
+          role: "DOCTOR",
+          username: form.username,
+          password: form.password,
+          fullName: form.name,
+          phone: form.contact,
+          specialization: form.specialization,
+          departmentId: form.department.id,
+          locationId: form.location?.id
+        }, profilePicture || undefined);
+        toast.success(t("doctors.toast.created"));
       }
       resetForm();
       queryClient.invalidateQueries({ queryKey: ["doctors"] });
-    } catch {
-      toast.error("Could not save doctor");
+    } catch (err: any) {
+      const msg = err.response?.data?.message || t("doctors.toast.saveFailed");
+      toast.error(msg);
     }
   };
 
@@ -89,6 +115,9 @@ const DoctorListPage: React.FC = () => {
       specialization: doc.specialization,
       department: doc.department ? { id: doc.department.id, name: doc.department.name } : undefined,
       location: doc.location ? { id: doc.location.id } : undefined,
+      username: "", // Not editable here
+      password: "",
+      confirm: ""
     });
     setEditingId(doc.id ?? null);
     setShowForm(true);
@@ -96,13 +125,13 @@ const DoctorListPage: React.FC = () => {
 
   const handleDelete = async (id?: number) => {
     if (!id) return;
-    if (!window.confirm("Delete this doctor?")) return;
+    if (!window.confirm(t("doctors.deleteConfirm"))) return;
     try {
       await doctorApi.remove(id);
-      toast.success("Doctor removed");
+      toast.success(t("doctors.toast.deleted"));
       queryClient.invalidateQueries({ queryKey: ["doctors"] });
     } catch {
-      toast.error("Unable to delete doctor");
+      toast.error(t("doctors.toast.deleteFailed"));
     }
   };
 
@@ -110,10 +139,10 @@ const DoctorListPage: React.FC = () => {
   if (isError) {
     return (
       <div className="space-y-3">
-        <h1 className="text-2xl font-semibold text-slate-800">Doctors</h1>
-        <p className="text-sm text-red-600">Unable to load doctors. Ensure you are logged in as ADMIN or DOCTOR.</p>
+        <h1 className="text-2xl font-semibold text-slate-800">{t("nav.doctors")}</h1>
+        <p className="text-sm text-red-600">{t("doctors.error.unableToLoad")}</p>
         <AppButton variant="secondary" onClick={() => refetch()}>
-          Retry
+          {t("common.retry")}
         </AppButton>
       </div>
     );
@@ -127,8 +156,8 @@ const DoctorListPage: React.FC = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-800">Doctors</h1>
-          <p className="text-sm text-slate-500">Manage doctors, their specialties, and department assignments.</p>
+          <h1 className="text-2xl font-semibold text-slate-800">{t("nav.doctors")}</h1>
+          <p className="text-sm text-slate-500">{t("doctors.subtitle")}</p>
         </div>
         <div className="flex gap-2">
           <SearchInput
@@ -137,20 +166,20 @@ const DoctorListPage: React.FC = () => {
               setTerm(e.target.value);
               setPage(0);
             }}
-            placeholder="Search doctors..."
+            placeholder={t("doctors.searchPlaceholder")}
           />
           <AppButton variant="secondary" onClick={() => { setTerm(""); setPage(0); }}>
-            Clear
+            {t("common.clear")}
           </AppButton>
-          {canManage && <AppButton onClick={() => setShowForm(true)}>New Doctor</AppButton>}
+          {canManage && <AppButton onClick={() => setShowForm(true)}>{t("doctors.newDoctor")}</AppButton>}
         </div>
       </div>
 
       <StatsBar
         items={[
-          { label: "Total Doctors", value: totalDoctors },
-          { label: "Departments", value: departmentOptions.length },
-          { label: "Showing", value: doctorRows.length },
+          { label: t("doctors.stats.totalDoctors"), value: totalDoctors },
+          { label: t("doctors.stats.departments"), value: departmentOptions.length },
+          { label: t("doctors.stats.showing"), value: doctorRows.length },
         ]}
       />
 
@@ -159,8 +188,69 @@ const DoctorListPage: React.FC = () => {
           onSubmit={handleSubmit}
           className="bg-white border rounded-lg shadow-sm p-4 grid grid-cols-1 md:grid-cols-2 gap-4"
         >
+          {!editingId && (
+            <div className="md:col-span-2 flex flex-col items-center gap-4 mb-4 border-b pb-4">
+              <div className="relative w-24 h-24 rounded-full overflow-hidden border bg-gray-100">
+                {profilePreview ? (
+                  <img src={profilePreview} alt="Preview" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="flex items-center justify-center w-full h-full text-gray-400">
+                    <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+                  </div>
+                )}
+              </div>
+              <label className="cursor-pointer bg-white px-3 py-1.5 border rounded-md text-sm hover:bg-gray-50 shadow-sm">
+                {t("common.choosePhoto")}
+                <input type="file" className="hidden" accept="image/*" onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    setProfilePicture(file);
+                    setProfilePreview(URL.createObjectURL(file));
+                  }
+                }} />
+              </label>
+            </div>
+          )}
+
+          {!editingId && (
+            <>
+              <div>
+                <label className="block text-sm mb-1">{t("signup.emailUsername")}</label>
+                <input
+                  className="w-full border rounded px-3 py-2"
+                  value={form.username || ""}
+                  onChange={(e) => setForm({ ...form, username: e.target.value })}
+                  placeholder="doctor@hospital.rw"
+                  required={!editingId}
+                />
+              </div>
+              <div className="hidden md:block"></div>
+              <div>
+                <label className="block text-sm mb-1">{t("common.password")}</label>
+                <input
+                  className="w-full border rounded px-3 py-2"
+                  type="password"
+                  value={form.password || ""}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  required={!editingId}
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1">{t("signup.confirm")}</label>
+                <input
+                  className="w-full border rounded px-3 py-2"
+                  type="password"
+                  value={form.confirm || ""}
+                  onChange={(e) => setForm({ ...form, confirm: e.target.value })}
+                  required={!editingId}
+                />
+              </div>
+              <div className="md:col-span-2 border-t my-2"></div>
+            </>
+          )}
+
           <div>
-            <label className="block text-sm mb-1">Name</label>
+            <label className="block text-sm mb-1">{t("common.name")}</label>
             <input
               className="w-full border rounded px-3 py-2"
               value={form.name}
@@ -169,7 +259,7 @@ const DoctorListPage: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm mb-1">Contact</label>
+            <label className="block text-sm mb-1">{t("common.contact")}</label>
             <input
               className="w-full border rounded px-3 py-2"
               value={form.contact}
@@ -178,7 +268,7 @@ const DoctorListPage: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm mb-1">Specialization</label>
+            <label className="block text-sm mb-1">{t("common.specialization")}</label>
             <input
               className="w-full border rounded px-3 py-2"
               value={form.specialization}
@@ -187,69 +277,69 @@ const DoctorListPage: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm mb-1">Department</label>
+            <label className="block text-sm mb-1">{t("common.department")}</label>
             <select
               className="w-full border rounded px-3 py-2"
               value={form.department?.id ?? ""}
               onChange={(e) => {
                 const id = e.target.value ? Number(e.target.value) : undefined;
                 const dept = departmentOptions.find((d) => d.id === id);
-                setForm({ ...form, department: id ? { id, name: dept?.name, consultationFee: dept?.consultationFee } : undefined });
+                setForm({ ...form, department: id ? { id, name: dept?.name || "" } : undefined });
               }}
               required
             >
-              <option value="">Select department</option>
+              <option value="">{t("doctors.selectDepartment")}</option>
               {departmentOptions.map((dept) => (
                 <option key={dept.id} value={dept.id}>
-                  {dept.name} (Fee: {dept.consultationFee})
+                  {dept.name} ({t("common.fee")}: {dept.consultationFee})
                 </option>
               ))}
             </select>
           </div>
-          <div className="md:col-span-2 border-t pt-4">
+          <div className="md:col-span-2 pt-2">
             <HierarchicalLocationPicker
               value={form.location?.id ?? null}
               onChange={handleLocationChange}
-              label="Location"
+              label={t("common.location")}
             />
           </div>
           <div className="md:col-span-2 flex justify-end gap-2">
             <AppButton type="button" variant="secondary" onClick={resetForm}>
-              Cancel
+              {t("common.cancel")}
             </AppButton>
-            <AppButton type="submit">{editingId ? "Update" : "Create"}</AppButton>
+            <AppButton type="submit">{editingId ? t("common.update") : t("common.create")}</AppButton>
           </div>
         </form>
       )}
 
       <AppTable
         columns={[
-          { key: "name", header: "Name" },
-          { key: "specialization", header: "Specialization" },
-          { key: "contact", header: "Contact" },
+          { key: "name", header: t("common.name") },
+          { key: "specialization", header: t("common.specialization") },
+          { key: "contact", header: t("common.contact") },
           {
             key: "department",
-            header: "Department",
+            header: t("common.department"),
             render: (row: Doctor) =>
-              row.department ? `${row.department.name || ""}` : "Unassigned",
+              row.department ? `${row.department.name || ""}` : t("common.unassigned"),
           },
           {
             key: "location",
-            header: "Location",
-            render: (row: Doctor) => row.location?.path || row.location?.name || "N/A",
+            header: t("common.location"),
+            render: (row: Doctor) => row.location?.path || row.location?.name || t("common.na"),
           },
           {
             key: "actions",
-            header: "Actions",
+            header: t("common.actions"),
             render: (row: Doctor) => (
               <div className="flex gap-2">
                 {canManage && (
                   <>
                     <AppButton variant="secondary" onClick={() => handleEdit(row)}>
-                      Edit
+                      {t("common.edit")}
                     </AppButton>
                     <AppButton variant="ghost" onClick={() => handleDelete(row.id)}>
-                      Delete
+                      {t("common.delete")}
                     </AppButton>
                   </>
                 )}

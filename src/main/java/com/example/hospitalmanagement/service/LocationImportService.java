@@ -4,8 +4,6 @@ import com.example.hospitalmanagement.dto.LocationJsonRow;
 import com.example.hospitalmanagement.model.Location;
 import com.example.hospitalmanagement.model.enums.LocationType;
 import com.example.hospitalmanagement.repository.LocationRepository;
-import com.example.hospitalmanagement.repository.PatientRepository;
-import com.example.hospitalmanagement.repository.UserAccountRepository;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
@@ -28,10 +26,9 @@ import org.springframework.stereotype.Service;
 public class LocationImportService {
 
     private final LocationRepository locationRepository;
-    private final PatientRepository patientRepository;
-    private final UserAccountRepository userAccountRepository;
     private final ObjectMapper objectMapper;
     private final JdbcTemplate jdbcTemplate;
+    private final LocationService locationService;
 
     @Value("classpath:data/location/locations.json")
     private Resource locationsJson;
@@ -49,6 +46,7 @@ public class LocationImportService {
             Map<String, Location> cache = new HashMap<>();
             rows.forEach(row -> upsertHierarchy(row, cache));
             long total = locationRepository.count();
+            locationService.clearPathCache();
             log.info("Imported {} location rows resulting in {} unique nodes", rows.size(), total);
             return new ImportResult(rows.size(), total, false);
         } catch (Exception ex) {
@@ -84,6 +82,7 @@ public class LocationImportService {
             Map<String, Location> cache = new HashMap<>();
             rows.forEach(row -> upsertHierarchy(row, cache));
             long total = locationRepository.count();
+            locationService.clearPathCache();
             log.info("Imported {} location rows resulting in {} unique nodes", rows.size(), total);
             return new ImportResult(rows.size(), total, false);
         } catch (Exception ex) {

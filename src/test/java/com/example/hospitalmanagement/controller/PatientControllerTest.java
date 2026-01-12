@@ -37,25 +37,27 @@ class PatientControllerTest {
     void prepareData() {
         patientRepository.deleteAll();
         locationRepository.deleteAll();
-        Location province = locationRepository.save(Location.builder()
-                .code("RW-SOUTH")
-                .name("Southern")
-                .type(LocationType.PROVINCE)
-                .build());
-        Location village = locationRepository.save(Location.builder()
-                .code("RW-SOUTH-01")
-                .name("Huye")
-                .type(LocationType.VILLAGE)
-                .parent(province)
-                .build());
-        patientRepository.save(Patient.builder()
-                .fullName("Controller Test Patient")
-                .age(40)
-                .gender("MALE")
-                .email("controller@test.rw")
-                .phone("+250700000099")
-                .location(village)
-                .build());
+        Location provinceToSave = new Location();
+        provinceToSave.setCode("RW-SOUTH");
+        provinceToSave.setName("Southern");
+        provinceToSave.setType(LocationType.PROVINCE);
+        Location province = locationRepository.save(provinceToSave);
+
+        Location villageToSave = new Location();
+        villageToSave.setCode("RW-SOUTH-01");
+        villageToSave.setName("Huye");
+        villageToSave.setType(LocationType.VILLAGE);
+        villageToSave.setParent(province);
+        Location village = locationRepository.save(villageToSave);
+
+        Patient patient = new Patient();
+        patient.setFullName("Controller Test Patient");
+        patient.setAge(40);
+        patient.setGender("MALE");
+        patient.setEmail("controller@test.rw");
+        patient.setPhone("+250700000099");
+        patient.setLocation(village);
+        patientRepository.save(patient);
     }
 
     @Test

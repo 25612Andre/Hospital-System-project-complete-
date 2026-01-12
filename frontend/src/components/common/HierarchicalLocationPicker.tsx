@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import locationApi from '../../api/locationApi';
 import type { LocationNode, LocationType } from '../../api/locationApi';
 

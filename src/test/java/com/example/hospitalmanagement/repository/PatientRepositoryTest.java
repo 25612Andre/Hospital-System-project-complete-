@@ -3,7 +3,6 @@ package com.example.hospitalmanagement.repository;
 import com.example.hospitalmanagement.model.Location;
 import com.example.hospitalmanagement.model.Patient;
 import com.example.hospitalmanagement.model.enums.LocationType;
-import java.util.Collections;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,33 +26,34 @@ class PatientRepositoryTest {
 
     @BeforeEach
     void setup() {
-        Location province = locationRepository.save(Location.builder()
-                .code("RW-KGL")
-                .name("Kigali")
-                .type(LocationType.PROVINCE)
-                .build());
-        Location district = locationRepository.save(Location.builder()
-                .code("RW-KGL-GAS")
-                .name("Gasabo")
-                .type(LocationType.DISTRICT)
-                .parent(province)
-                .build());
-        village = locationRepository.save(Location.builder()
-                .code("RW-KGL-GAS-KIM-001")
-                .name("Kimironko Village")
-                .type(LocationType.VILLAGE)
-                .parent(district)
-                .build());
+        Location provinceToSave = new Location();
+        provinceToSave.setCode("RW-KGL");
+        provinceToSave.setName("Kigali");
+        provinceToSave.setType(LocationType.PROVINCE);
+        Location province = locationRepository.save(provinceToSave);
 
-        patientRepository.save(Patient.builder()
-                .fullName("Test Patient")
-                .age(30)
-                .gender("FEMALE")
-                .email("patient@example.com")
-                .phone("+250700000001")
-                .location(village)
-                .doctors(Collections.emptySet())
-                .build());
+        Location districtToSave = new Location();
+        districtToSave.setCode("RW-KGL-GAS");
+        districtToSave.setName("Gasabo");
+        districtToSave.setType(LocationType.DISTRICT);
+        districtToSave.setParent(province);
+        Location district = locationRepository.save(districtToSave);
+
+        Location villageToSave = new Location();
+        villageToSave.setCode("RW-KGL-GAS-KIM-001");
+        villageToSave.setName("Kimironko Village");
+        villageToSave.setType(LocationType.VILLAGE);
+        villageToSave.setParent(district);
+        village = locationRepository.save(villageToSave);
+
+        Patient patient = new Patient();
+        patient.setFullName("Test Patient");
+        patient.setAge(30);
+        patient.setGender("FEMALE");
+        patient.setEmail("patient@example.com");
+        patient.setPhone("+250700000001");
+        patient.setLocation(village);
+        patientRepository.save(patient);
     }
 
     @Test

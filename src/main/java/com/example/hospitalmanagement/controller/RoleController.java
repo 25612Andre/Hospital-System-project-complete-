@@ -5,6 +5,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,7 +28,7 @@ public class RoleController {
     }
 
     @GetMapping("/page")
-    public ResponseEntity<Page<Map<String, Object>>> getPage(Pageable pageable) {
+    public ResponseEntity<Page<Map<String, Object>>> getPage(@NonNull Pageable pageable) {
         List<Map<String, Object>> allRoles = Arrays.stream(Role.values())
                 .map(role -> Map.<String, Object>of("id", role.ordinal() + 1, "name", role.name()))
                 .collect(Collectors.toList());
@@ -35,11 +36,9 @@ public class RoleController {
         int start = (int) pageable.getOffset();
         int end = Math.min((start + pageable.getPageSize()), allRoles.size());
         
-        List<Map<String, Object>> pageContent;
-        if (start > allRoles.size()) {
-             pageContent = List.of();
-        } else {
-             pageContent = allRoles.subList(start, end);
+        List<Map<String, Object>> pageContent = List.of();
+        if (start <= allRoles.size()) {
+            pageContent = allRoles.subList(start, end);
         }
 
         return ResponseEntity.ok(new PageImpl<>(pageContent, pageable, allRoles.size()));

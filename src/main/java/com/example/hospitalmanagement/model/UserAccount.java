@@ -1,6 +1,5 @@
 package com.example.hospitalmanagement.model;
 
-import com.example.hospitalmanagement.model.Location;
 import com.example.hospitalmanagement.model.enums.Role;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
@@ -35,6 +34,9 @@ public class UserAccount {
 
     @Column(name = "two_factor_enabled")
     private boolean twoFactorEnabled;
+
+    @Column(name = "profile_picture_url", length = 500)
+    private String profilePictureUrl;
 
     @ManyToOne
     @JoinColumn(name = "location_id")

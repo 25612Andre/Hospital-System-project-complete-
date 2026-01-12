@@ -25,12 +25,12 @@ public class DepartmentController {
     }
 
     @GetMapping("/page")
-    public ResponseEntity<Page<Department>> getPage(@PageableDefault(sort = "id") Pageable pageable) {
+    public ResponseEntity<Page<Department>> getPage(@NonNull @PageableDefault(sort = "id") Pageable pageable) {
         return ResponseEntity.ok(service.getPage(pageable));
     }
 
     @GetMapping("/exists")
-    public ResponseEntity<Boolean> exists(@RequestParam String name) {
+    public ResponseEntity<Boolean> exists(@RequestParam @NonNull String name) {
         return ResponseEntity.ok(service.existsByName(name));
     }
 

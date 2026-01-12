@@ -3,8 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { dashboardApi } from "../../api/dashboardApi";
 import type { SearchResultDTO } from "../../dto/SearchResultDTO";
+import { useI18n } from "../../i18n/I18nProvider";
 
 const GlobalSearchBarEnhanced: React.FC = () => {
+    const { t } = useI18n();
     const [term, setTerm] = useState("");
     const [showDropdown, setShowDropdown] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -115,6 +117,19 @@ const GlobalSearchBarEnhanced: React.FC = () => {
         return colors[type] || "bg-slate-100 text-slate-700";
     };
 
+    const getTypeLabel = (type: string) => {
+        const map: Record<string, Parameters<typeof t>[0]> = {
+            Patient: "entity.patient",
+            Doctor: "entity.doctor",
+            Appointment: "entity.appointment",
+            Bill: "entity.bill",
+            Department: "entity.department",
+            Location: "entity.location",
+        };
+        const key = map[type];
+        return key ? t(key) : type;
+    };
+
     const highlightMatch = (text: string, search: string) => {
         if (!search) return text;
         const parts = text.split(new RegExp(`(${search})`, 'gi'));
@@ -155,7 +170,7 @@ const GlobalSearchBarEnhanced: React.FC = () => {
                     value={term}
                     onChange={(e) => setTerm(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder="Search by ID, name, or keyword..."
+                    placeholder={t("search.placeholder")}
                     className="flex-1 outline-none bg-transparent text-sm placeholder-slate-400 min-w-[200px]"
                 />
                 {isLoading && (
@@ -182,12 +197,14 @@ const GlobalSearchBarEnhanced: React.FC = () => {
                 <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-slate-200 rounded-lg shadow-xl max-h-[400px] overflow-y-auto z-[9999]">
                     {flatResults.length === 0 ? (
                         <div className="p-4 text-center text-slate-500 text-sm">
-                            No results found for "{term}"
+                            {t("search.noResultsFor", { term })}
                         </div>
                     ) : (
                         <>
                             <div className="px-3 py-2 bg-slate-50 border-b border-slate-200 text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                                {flatResults.length} result{flatResults.length !== 1 ? 's' : ''} found
+                                {flatResults.length === 1
+                                    ? t("search.resultFound")
+                                    : t("search.resultsFound", { count: flatResults.length })}
                             </div>
                             {flatResults.map((result, index) => (
                                 <button
@@ -199,7 +216,7 @@ const GlobalSearchBarEnhanced: React.FC = () => {
                                     <div className="flex items-start gap-3">
                                         <div className="flex-shrink-0">
                                             <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${getTypeColor(result.type)}`}>
-                                                {result.type}
+                                                {getTypeLabel(result.type)}
                                             </span>
                                         </div>
                                         <div className="flex-1 min-w-0">
@@ -210,7 +227,7 @@ const GlobalSearchBarEnhanced: React.FC = () => {
                                                 {result.detail}
                                             </div>
                                             <div className="text-xs text-slate-400 mt-1">
-                                                ID: {result.id}
+                                                {t("search.id")}: {result.id}
                                             </div>
                                         </div>
                                         <div className="flex-shrink-0 text-slate-400">
@@ -229,7 +246,7 @@ const GlobalSearchBarEnhanced: React.FC = () => {
                                     }}
                                     className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
                                 >
-                                    View all results
+                                    {t("search.viewAll")}
                                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7l5 5m0 0l-5 5m5-5H6" />
                                     </svg>

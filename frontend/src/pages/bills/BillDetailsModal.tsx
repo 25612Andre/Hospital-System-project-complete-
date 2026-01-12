@@ -1,4 +1,5 @@
 import React from "react";
+import { useI18n } from "../../i18n/I18nProvider";
 import AppButton from "../../components/common/AppButton";
 import type { Bill } from "../../api/billApi";
 
@@ -8,6 +9,7 @@ interface BillDetailsModalProps {
 }
 
 const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClose }) => {
+    const { t } = useI18n();
     const patient = bill.appointment?.patient;
     const doctor = bill.appointment?.doctor;
 
@@ -45,13 +47,13 @@ const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClose }) =>
                 <div className="bg-white rounded-lg shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden print:max-w-none print:max-h-none print:shadow-none print:rounded-none">
                     {/* Modal Header (Actions) */}
                     <div className="flex justify-between items-center p-4 bg-gradient-to-r from-primary-600 to-primary-700 border-b print:hidden">
-                        <h2 className="text-lg font-semibold text-white">Medical Invoice</h2>
+                        <h2 className="text-lg font-semibold text-white">{t("bills.invoice.title")}</h2>
                         <div className="flex gap-2">
                             <AppButton variant="secondary" onClick={() => window.print()}>
-                                🖨️ Print Invoice
+                                🖨️ {t("bills.invoice.print")}
                             </AppButton>
                             <AppButton variant="primary" onClick={onClose}>
-                                Close
+                                {t("bills.invoice.close")}
                             </AppButton>
                         </div>
                     </div>
@@ -106,25 +108,25 @@ const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClose }) =>
                                 {/* Invoice Details */}
                                 <div className="text-right">
                                     <div className="bg-gradient-to-br from-primary-50 to-primary-100 px-6 py-4 rounded-lg border-2 border-primary-200">
-                                        <h2 className="text-3xl font-bold text-primary-900 mb-3">INVOICE</h2>
+                                        <h2 className="text-3xl font-bold text-primary-900 mb-3">{t("bills.invoice.invoiceTitle")}</h2>
                                         <div className="space-y-2 text-sm">
                                             <div className="flex justify-between gap-6">
-                                                <span className="font-semibold text-slate-700">Invoice #:</span>
+                                                <span className="font-semibold text-slate-700">{t("bills.invoice.invoiceNumber")}:</span>
                                                 <span className="font-mono font-bold text-primary-700">INV-{String(bill.id).padStart(6, '0')}</span>
                                             </div>
                                             <div className="flex justify-between gap-6">
-                                                <span className="font-semibold text-slate-700">Date:</span>
+                                                <span className="font-semibold text-slate-700">{t("bills.invoice.date")}:</span>
                                                 <span className="font-mono">{new Date(bill.issuedDate).toLocaleDateString('en-GB')}</span>
                                             </div>
                                             <div className="flex justify-between gap-6">
-                                                <span className="font-semibold text-slate-700">Time:</span>
+                                                <span className="font-semibold text-slate-700">{t("bills.invoice.time")}:</span>
                                                 <span className="font-mono">{new Date(bill.issuedDate).toLocaleTimeString('en-GB')}</span>
                                             </div>
                                             <div className="flex justify-between gap-6 pt-2 border-t border-primary-200">
-                                                <span className="font-semibold text-slate-700">Status:</span>
+                                                <span className="font-semibold text-slate-700">{t("bills.invoice.status")}:</span>
                                                 <span className={`px-3 py-1 rounded-full text-xs font-bold ${bill.status === 'Paid'
-                                                        ? 'bg-green-100 text-green-700 border border-green-300'
-                                                        : 'bg-yellow-100 text-yellow-700 border border-yellow-300'
+                                                    ? 'bg-green-100 text-green-700 border border-green-300'
+                                                    : 'bg-yellow-100 text-yellow-700 border border-yellow-300'
                                                     }`}>
                                                     {bill.status.toUpperCase()}
                                                 </span>
@@ -140,7 +142,7 @@ const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClose }) =>
                             {/* Patient Info */}
                             <div className="bg-slate-50 p-6 rounded-lg border border-slate-200">
                                 <h3 className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <span>👤</span> Patient Information
+                                    <span>👤</span> {t("bills.invoice.patientInfo")}
                                 </h3>
                                 <div className="text-slate-900 font-bold text-lg mb-3">{patient?.fullName || "N/A"}</div>
                                 <div className="text-slate-600 text-sm space-y-1">
@@ -162,7 +164,7 @@ const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClose }) =>
                             {/* Doctor/Department Info */}
                             <div className="bg-primary-50 p-6 rounded-lg border border-primary-200">
                                 <h3 className="text-xs font-bold text-primary-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                    <span>⚕️</span> Service Provider
+                                    <span>⚕️</span> {t("bills.invoice.serviceProvider")}
                                 </h3>
                                 <div className="text-slate-900 font-bold text-lg mb-3">Dr. {doctor?.name || "Unknown"}</div>
                                 <div className="text-slate-600 text-sm space-y-1">
@@ -184,25 +186,25 @@ const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClose }) =>
 
                         {/* Services Table */}
                         <div className="mb-8 print-break">
-                            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4">Services Rendered</h3>
+                            <h3 className="text-sm font-bold text-slate-700 uppercase tracking-wider mb-4">{t("bills.invoice.servicesRendered")}</h3>
                             <table className="w-full">
                                 <thead>
                                     <tr className="bg-gradient-to-r from-slate-100 to-slate-50 border-y-2 border-slate-300">
-                                        <th className="py-4 px-4 text-left font-semibold text-slate-700 text-sm uppercase">Description</th>
-                                        <th className="py-4 px-4 text-center font-semibold text-slate-700 text-sm uppercase">Qty</th>
-                                        <th className="py-4 px-4 text-right font-semibold text-slate-700 text-sm uppercase">Unit Price</th>
-                                        <th className="py-4 px-4 text-right font-semibold text-slate-700 text-sm uppercase">Amount</th>
+                                        <th className="py-4 px-4 text-left font-semibold text-slate-700 text-sm uppercase">{t("bills.invoice.description")}</th>
+                                        <th className="py-4 px-4 text-center font-semibold text-slate-700 text-sm uppercase">{t("bills.invoice.qty")}</th>
+                                        <th className="py-4 px-4 text-right font-semibold text-slate-700 text-sm uppercase">{t("bills.invoice.unitPrice")}</th>
+                                        <th className="py-4 px-4 text-right font-semibold text-slate-700 text-sm uppercase">{t("bills.invoice.amount")}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr className="border-b border-slate-200 hover:bg-slate-50 print:hover:bg-transparent">
                                         <td className="py-4 px-4">
-                                            <div className="font-semibold text-slate-900">Medical Consultation</div>
+                                            <div className="font-semibold text-slate-900">{t("bills.invoice.consultation")}</div>
                                             <div className="text-sm text-slate-500 mt-1">
                                                 Appointment #{bill.appointment?.id} • {new Date(bill.appointment?.appointmentDate || '').toLocaleDateString()}
                                             </div>
                                             <div className="text-xs text-slate-400 mt-1">
-                                                Attended by Dr. {doctor?.name}
+                                                {t("bills.invoice.attendedBy", { name: doctor?.name || "" })}
                                             </div>
                                         </td>
                                         <td className="py-4 px-4 text-center text-slate-700">1</td>
@@ -218,24 +220,24 @@ const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClose }) =>
                             <div className="w-80 bg-slate-50 p-6 rounded-lg border-2 border-slate-200">
                                 <div className="space-y-3">
                                     <div className="flex justify-between text-slate-600">
-                                        <span>Subtotal:</span>
+                                        <span>{t("bills.invoice.subtotal")}:</span>
                                         <span className="font-mono">RWF {bill.amount.toLocaleString()}</span>
                                     </div>
                                     <div className="flex justify-between text-slate-600">
-                                        <span>Tax (0%):</span>
+                                        <span>{t("bills.invoice.tax")}:</span>
                                         <span className="font-mono">RWF 0.00</span>
                                     </div>
                                     <div className="flex justify-between text-slate-600">
-                                        <span>Discount:</span>
+                                        <span>{t("bills.invoice.discount")}:</span>
                                         <span className="font-mono">RWF 0.00</span>
                                     </div>
                                     <div className="border-t-2 border-slate-300 pt-3 flex justify-between text-xl font-bold text-slate-900">
-                                        <span>TOTAL:</span>
+                                        <span>{t("bills.invoice.total")}:</span>
                                         <span className="font-mono text-primary-700">RWF {bill.amount.toLocaleString()}</span>
                                     </div>
                                     {bill.paymentMethod && (
                                         <div className="pt-3 border-t border-slate-200 flex justify-between text-sm">
-                                            <span className="text-slate-600">Payment Method:</span>
+                                            <span className="text-slate-600">{t("bills.invoice.paymentMethod")}:</span>
                                             <span className="font-semibold text-slate-900">{bill.paymentMethod}</span>
                                         </div>
                                     )}
@@ -248,7 +250,7 @@ const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClose }) =>
                             <div className="grid grid-cols-3 gap-8 items-end">
                                 {/* Terms & Conditions */}
                                 <div className="col-span-1">
-                                    <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wide">Terms & Conditions</h4>
+                                    <h4 className="font-bold text-slate-700 mb-3 text-sm uppercase tracking-wide">{t("bills.invoice.termsConditions")}</h4>
                                     <div className="text-xs text-slate-600 space-y-1">
                                         <p>• Payment due within 14 days</p>
                                         <p>• Late payments subject to 2% monthly interest</p>
@@ -277,7 +279,7 @@ const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClose }) =>
                                             </div>
                                         </div>
                                     </div>
-                                    <p className="text-xs text-slate-500 mt-2 font-semibold">OFFICIAL STAMP</p>
+                                    <p className="text-xs text-slate-500 mt-2 font-semibold">{t("bills.invoice.officialStamp")}</p>
                                 </div>
 
                                 {/* Authorized Signature */}
@@ -291,8 +293,8 @@ const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClose }) =>
                                         </div>
                                         {/* Signature Line */}
                                         <div className="border-t-2 border-slate-900 pt-2">
-                                            <p className="text-center font-bold text-slate-800 text-sm">Authorized Signature</p>
-                                            <p className="text-center text-xs text-slate-500 mt-1">Financial Director</p>
+                                            <p className="text-center font-bold text-slate-800 text-sm">{t("bills.invoice.authorizedSignature")}</p>
+                                            <p className="text-center text-xs text-slate-500 mt-1">{t("bills.invoice.financialDirector")}</p>
                                             <p className="text-center text-xs text-slate-400 font-mono mt-1">
                                                 {new Date().toLocaleDateString('en-GB')}
                                             </p>
@@ -305,10 +307,10 @@ const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClose }) =>
                         {/* Bottom Footer */}
                         <div className="mt-8 pt-6 border-t border-slate-200 text-center">
                             <p className="text-xs text-slate-500">
-                                This is a computer-generated invoice and does not require a physical signature.
+                                {t("bills.invoice.footerNote")}
                             </p>
                             <p className="text-xs text-slate-400 mt-1">
-                                For inquiries, please contact our billing department at billing@hospitalnze.rw
+                                {t("bills.invoice.contact")}
                             </p>
                         </div>
                     </div>

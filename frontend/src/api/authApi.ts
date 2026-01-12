@@ -29,6 +29,7 @@ export interface AuthUser {
   role: string;
   patientId?: number;
   doctorId?: number;
+  profilePictureUrl?: string;
 }
 
 export interface LoginResponse {

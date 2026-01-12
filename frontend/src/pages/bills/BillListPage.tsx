@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from "react";
+import { useI18n } from "../../i18n/I18nProvider";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import AppTable from "../../components/common/AppTable";
@@ -13,6 +14,7 @@ import { useAuth } from "../../context/useAuth";
 import BillDetailsModal from "./BillDetailsModal";
 
 const BillListPage: React.FC = () => {
+  const { t } = useI18n();
   const [page, setPage] = useState(0);
   const [size] = useState(10);
   const [term, setTerm] = useState("");
@@ -72,37 +74,31 @@ const BillListPage: React.FC = () => {
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedAppointment) {
-      toast.error("Select an appointment");
+      toast.error(t("bills.toast.selectAppointment"));
       return;
     }
     try {
       await billApi.generate(selectedAppointment.id);
-      toast.success("Bill generated");
+      toast.success(t("bills.toast.generated"));
       setSelectedAppointment(null);
       setAppointmentSearch("");
       setFormOpen(false);
       queryClient.invalidateQueries({ queryKey: ["bills"] });
       queryClient.invalidateQueries({ queryKey: ["appointments-search"] });
     } catch {
-      toast.error("Could not generate bill");
+      toast.error(t("bills.toast.generateFailed"));
     }
-  };
-
-  const handleStatus = async (bill: Bill, status: string) => {
-    await billApi.update(bill.id, { status });
-    toast.success("Status updated");
-    queryClient.invalidateQueries({ queryKey: ["bills"] });
   };
 
   const handlePayment = async (method: string) => {
     if (!paymentBill) return;
     try {
       await billApi.update(paymentBill.id, { status: "Paid", paymentMethod: method });
-      toast.success(`Bill marked as Paid via ${method}`);
+      toast.success(`${t("bills.toast.paidVia")} ${method}`);
       setPaymentBill(null);
       queryClient.invalidateQueries({ queryKey: ["bills"] });
     } catch {
-      toast.error("Failed to update status");
+      toast.error(t("bills.toast.updateFailed"));
     }
   };
 
@@ -127,8 +123,8 @@ const BillListPage: React.FC = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-800">Bills</h1>
-          <p className="text-sm text-slate-500">Generate invoices from appointments and track payment status.</p>
+          <h1 className="text-2xl font-semibold text-slate-800">{t("bills.title")}</h1>
+          <p className="text-sm text-slate-500">{t("bills.subtitle")}</p>
         </div>
         <div className="flex gap-2">
           <SearchInput
@@ -137,22 +133,22 @@ const BillListPage: React.FC = () => {
               setTerm(e.target.value);
               setPage(0);
             }}
-            placeholder="Search by status or patient..."
+            placeholder={t("bills.searchPlaceholder")}
           />
           <AppButton variant="secondary" onClick={() => { setTerm(""); setPage(0); }}>
-            Clear
+            {t("common.clear")}
           </AppButton>
-          {canManage && <AppButton onClick={() => setFormOpen(true)}>Generate Bill</AppButton>}
+          {canManage && <AppButton onClick={() => setFormOpen(true)}>{t("bills.generateBill")}</AppButton>}
         </div>
       </div>
 
       {data && (
         <StatsBar
           items={[
-            { label: "Total Bills", value: data.totalElements },
-            { label: "Paid", value: statusCounts["Paid"] || 0 },
-            { label: "Pending", value: statusCounts["Pending"] || 0 },
-            { label: "Showing", value: data.content.length },
+            { label: t("bills.stats.totalBills"), value: data.totalElements },
+            { label: t("bills.stats.paid"), value: statusCounts["Paid"] || 0 },
+            { label: t("bills.stats.pending"), value: statusCounts["Pending"] || 0 },
+            { label: t("bills.stats.showing"), value: data.content.length },
           ]}
         />
       )}
@@ -163,11 +159,11 @@ const BillListPage: React.FC = () => {
           className="bg-white border rounded-lg shadow-sm p-4 space-y-4"
         >
           <div className="relative">
-            <label className="block text-sm mb-1">Search Appointment</label>
+            <label className="block text-sm mb-1">{t("bills.form.searchAppointment")}</label>
             <input
               type="text"
               className="w-full border rounded px-3 py-2"
-              placeholder="Search by patient name, doctor name, or appointment ID..."
+              placeholder={t("bills.form.searchPlaceholder")}
               value={appointmentSearch}
               onChange={(e) => {
                 setAppointmentSearch(e.target.value);
@@ -191,9 +187,9 @@ const BillListPage: React.FC = () => {
                       className="px-3 py-2 hover:bg-slate-100 cursor-pointer border-b last:border-b-0"
                       onClick={() => handleSelectAppointment(app)}
                     >
-                      <div className="font-medium">#{app.id} - {app.patient?.fullName || "Unknown Patient"}</div>
+                      <div className="font-medium">#{app.id} - {app.patient?.fullName || t("bills.form.unknownPatient")}</div>
                       <div className="text-sm text-slate-500">
-                        with {app.doctor?.name || "Unknown Doctor"} • {app.status} • RWF {app.consultationFee?.toFixed(2) || "0.00"}
+                        with {app.doctor?.name || t("bills.form.unknownDoctor")} • {app.status} • RWF {app.consultationFee?.toFixed(2) || "0.00"}
                       </div>
                     </div>
                   ))
@@ -202,43 +198,43 @@ const BillListPage: React.FC = () => {
             )}
             {showResults && searchResults && searchResults.content.length === 0 && appointmentSearch && (
               <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg p-3">
-                <div className="text-sm text-slate-500">No unbilled appointments found</div>
+                <div className="text-sm text-slate-500">{t("bills.form.noUnbilledFound")}</div>
               </div>
             )}
           </div>
 
           {selectedAppointment && (
             <div className="bg-slate-50 border rounded p-3">
-              <div className="text-sm font-medium">Selected: #{selectedAppointment.id}</div>
+              <div className="text-sm font-medium">{t("bills.form.selected")}: #{selectedAppointment.id}</div>
               <div className="text-sm text-slate-600">
-                Patient: {selectedAppointment.patient?.fullName} | Doctor: {selectedAppointment.doctor?.name}
+                {t("bills.form.patient")}: {selectedAppointment.patient?.fullName} | {t("bills.form.doctor")}: {selectedAppointment.doctor?.name}
               </div>
               <div className="text-sm text-slate-600">
-                Fee: RWF {selectedAppointment.consultationFee?.toFixed(2) || "0.00"}
+                {t("bills.form.fee")}: RWF {selectedAppointment.consultationFee?.toFixed(2) || "0.00"}
               </div>
             </div>
           )}
 
           <div className="flex justify-end gap-2">
             <AppButton type="button" variant="secondary" onClick={() => { setFormOpen(false); setSelectedAppointment(null); setAppointmentSearch(""); }}>
-              Cancel
+              {t("common.cancel")}
             </AppButton>
-            <AppButton type="submit" disabled={!selectedAppointment}>Create bill</AppButton>
+            <AppButton type="submit" disabled={!selectedAppointment}>{t("bills.form.createBill")}</AppButton>
           </div>
         </form>
       )}
 
       <AppTable
         columns={[
-          { key: "id", header: "ID" },
+          { key: "id", header: "ID" }, // Kept as "ID" or use t("common.id") if available. Leaving as ID for now.
           {
             key: "amount",
-            header: "Amount",
+            header: t("bills.table.amount"),
             render: (row: Bill) => <span className="font-semibold text-slate-700">RWF {row.amount.toFixed(2)}</span>,
           },
           {
             key: "status",
-            header: "Status",
+            header: t("bills.table.status"),
             render: (row: Bill) => {
               const color = row.status === 'Paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
               return (
@@ -250,32 +246,32 @@ const BillListPage: React.FC = () => {
           },
           {
             key: "issuedDate",
-            header: "Issued",
+            header: t("bills.table.issued"),
             render: (row: Bill) => new Date(row.issuedDate).toLocaleString(),
           },
           {
             key: "appointment",
-            header: "Appointment",
+            header: t("bills.table.appointment"),
             render: (row: Bill) => (
               <div>
-                <div className="font-medium text-slate-800">{row.appointment?.patient?.fullName || "Unknown"}</div>
+                <div className="font-medium text-slate-800">{row.appointment?.patient?.fullName || t("common.unassigned")}</div>
                 <div className="text-xs text-slate-500">#{row.appointment?.id} • {row.appointment?.doctor?.name}</div>
               </div>
             ),
           },
           {
             key: "actions",
-            header: "Actions",
+            header: t("common.actions"),
             render: (row: Bill) => (
               <div className="flex gap-2">
                 <AppButton variant="secondary" onClick={() => setViewBill(row)}>
-                  View
+                  {t("common.view")}
                 </AppButton>
                 {canManage && (
                   <>
                     {row.status !== "Paid" && (
                       <AppButton variant="primary" onClick={() => setPaymentBill(row)}>
-                        Mark Paid
+                        {t("bills.markPaid")}
                       </AppButton>
                     )}
                     {/* Hide Pend button for now as flow is usually one-way */}
@@ -296,11 +292,11 @@ const BillListPage: React.FC = () => {
       {paymentBill && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
           <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
-            <h3 className="text-lg font-bold text-slate-800 mb-4">Select Payment Method</h3>
+            <h3 className="text-lg font-bold text-slate-800 mb-4">{t("bills.payment.title")}</h3>
             <p className="text-sm text-slate-600 mb-6">
-              How is this bill being paid?
+              {t("bills.payment.subtitle")}
               <br />
-              <span className="font-semibold text-slate-900">Total: RWF {paymentBill.amount.toFixed(2)}</span>
+              <span className="font-semibold text-slate-900">{t("bills.payment.total")}: RWF {paymentBill.amount.toFixed(2)}</span>
             </p>
             <div className="space-y-3">
               <button
@@ -327,7 +323,7 @@ const BillListPage: React.FC = () => {
                 onClick={() => setPaymentBill(null)}
                 className="text-slate-500 hover:text-slate-800 text-sm font-medium"
               >
-                Cancel
+                {t("common.cancel")}
               </button>
             </div>
           </div>

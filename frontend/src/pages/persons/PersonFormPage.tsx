@@ -33,7 +33,7 @@ const PersonFormPage: React.FC = () => {
   const [form, setForm] = useState<Person>({
     fullName: "",
     age: 0,
-    gender: "M",
+    gender: "MALE",
     email: "",
     phone: "",
     location: undefined,
@@ -89,18 +89,31 @@ const PersonFormPage: React.FC = () => {
             return (
               <div key={field.key}>
                 <label className="block text-sm font-medium mb-1 text-slate-700">{field.label}</label>
-                <input
-                  type={field.type || "text"}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
-                  value={valueStr}
-                  onChange={(e) =>
-                    setForm({
-                      ...form,
-                      [field.key]: field.type === "number" ? Number(e.target.value) : e.target.value,
-                    })
-                  }
-                  required
-                />
+                {field.key === "gender" ? (
+                  <select
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition bg-white"
+                    value={valueStr}
+                    onChange={(e) => setForm({ ...form, gender: e.target.value })}
+                    required
+                  >
+                    <option value="MALE">Male</option>
+                    <option value="FEMALE">Female</option>
+                    <option value="OTHER">Other</option>
+                  </select>
+                ) : (
+                  <input
+                    type={field.type || "text"}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition"
+                    value={valueStr}
+                    onChange={(e) =>
+                      setForm({
+                        ...form,
+                        [field.key]: field.type === "number" ? Number(e.target.value) : e.target.value,
+                      })
+                    }
+                    required
+                  />
+                )}
               </div>
             );
           })}

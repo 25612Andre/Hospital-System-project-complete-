@@ -25,13 +25,13 @@ public class DoctorController {
     }
 
     @GetMapping("/page")
-    public ResponseEntity<Page<Doctor>> getPage(@PageableDefault(sort = "id") Pageable pageable) {
+    public ResponseEntity<Page<Doctor>> getPage(@NonNull @PageableDefault(sort = "id") Pageable pageable) {
         return ResponseEntity.ok(service.getPage(pageable));
     }
 
     @GetMapping("/search")
     public ResponseEntity<Page<Doctor>> search(@RequestParam @NonNull String q,
-                                               @PageableDefault(sort = "name") Pageable pageable) {
+                                               @NonNull @PageableDefault(sort = "name") Pageable pageable) {
         return ResponseEntity.ok(service.search(q, pageable));
     }
 
@@ -41,7 +41,7 @@ public class DoctorController {
     }
 
     @GetMapping("/exists")
-    public ResponseEntity<Boolean> exists(@RequestParam String name) {
+    public ResponseEntity<Boolean> exists(@RequestParam @NonNull String name) {
         return ResponseEntity.ok(service.existsByName(name));
     }
 

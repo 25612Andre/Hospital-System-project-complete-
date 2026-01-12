@@ -79,38 +79,38 @@ public class DemoDataInitializer implements CommandLineRunner {
 
         // Appointments
         if (appointmentRepository.count() == 0) {
-            Appointment todayAppointment = appointmentRepository.save(Appointment.builder()
-                    .doctor(drAlice)
-                    .patient(patientMia)
-                    .appointmentDate(LocalDateTime.now().plusHours(2))
-                    .status("Scheduled")
-                    .consultationFee(30000.0)
-                    .createdAt(LocalDateTime.now().minusDays(1))
-                    .build());
+            Appointment todayAppointment = new Appointment();
+            todayAppointment.setDoctor(drAlice);
+            todayAppointment.setPatient(patientMia);
+            todayAppointment.setAppointmentDate(LocalDateTime.now().plusHours(2));
+            todayAppointment.setStatus("Scheduled");
+            todayAppointment.setConsultationFee(30000.0);
+            todayAppointment.setCreatedAt(LocalDateTime.now().minusDays(1));
+            todayAppointment = appointmentRepository.save(todayAppointment);
 
-            Appointment pastAppointment = appointmentRepository.save(Appointment.builder()
-                    .doctor(drEric)
-                    .patient(patientNoah)
-                    .appointmentDate(LocalDateTime.now().minusDays(1))
-                    .status("Completed")
-                    .consultationFee(25000.0)
-                    .createdAt(LocalDateTime.now().minusDays(2))
-                    .build());
+            Appointment pastAppointment = new Appointment();
+            pastAppointment.setDoctor(drEric);
+            pastAppointment.setPatient(patientNoah);
+            pastAppointment.setAppointmentDate(LocalDateTime.now().minusDays(1));
+            pastAppointment.setStatus("Completed");
+            pastAppointment.setConsultationFee(25000.0);
+            pastAppointment.setCreatedAt(LocalDateTime.now().minusDays(2));
+            pastAppointment = appointmentRepository.save(pastAppointment);
 
             // Bills
-            billingRepository.save(Bill.builder()
-                    .appointment(pastAppointment)
-                    .amount(pastAppointment.getConsultationFee())
-                    .status("Paid")
-                    .issuedDate(LocalDateTime.now().minusDays(1))
-                    .build());
+            Bill paidBill = new Bill();
+            paidBill.setAppointment(pastAppointment);
+            paidBill.setAmount(pastAppointment.getConsultationFee());
+            paidBill.setStatus("Paid");
+            paidBill.setIssuedDate(LocalDateTime.now().minusDays(1));
+            billingRepository.save(paidBill);
 
-            billingRepository.save(Bill.builder()
-                    .appointment(todayAppointment)
-                    .amount(todayAppointment.getConsultationFee())
-                    .status("Pending")
-                    .issuedDate(LocalDateTime.now())
-                    .build());
+            Bill pendingBill = new Bill();
+            pendingBill.setAppointment(todayAppointment);
+            pendingBill.setAmount(todayAppointment.getConsultationFee());
+            pendingBill.setStatus("Pending");
+            pendingBill.setIssuedDate(LocalDateTime.now());
+            billingRepository.save(pendingBill);
         }
 
         // User accounts for doctor and patient
@@ -139,11 +139,11 @@ public class DemoDataInitializer implements CommandLineRunner {
         }
         
         // No provinces exist, create a minimal one for demo
-        return locationRepository.save(Location.builder()
-                .code("DEMO")
-                .name("Demo Location")
-                .type(LocationType.PROVINCE)
-                .build());
+        Location created = new Location();
+        created.setCode("DEMO");
+        created.setName("Demo Location");
+        created.setType(LocationType.PROVINCE);
+        return locationRepository.save(created);
     }
 
     private void ensureAdmin(String username, String password, Location location) {
@@ -157,13 +157,13 @@ public class DemoDataInitializer implements CommandLineRunner {
                 userAccountRepository.save(admin);
             }
         } else {
-            userAccountRepository.save(UserAccount.builder()
-                    .username(username)
-                    .password(passwordEncoder.encode(password))
-                    .role(Role.ADMIN)
-                    .location(location)
-                    .twoFactorEnabled(false)
-                    .build());
+            UserAccount admin = new UserAccount();
+            admin.setUsername(username);
+            admin.setPassword(passwordEncoder.encode(password));
+            admin.setRole(Role.ADMIN);
+            admin.setLocation(location);
+            admin.setTwoFactorEnabled(false);
+            userAccountRepository.save(admin);
         }
     }
 
@@ -171,45 +171,51 @@ public class DemoDataInitializer implements CommandLineRunner {
         if (userAccountRepository.existsByUsernameIgnoreCase(username)) {
             return;
         }
-        userAccountRepository.save(UserAccount.builder()
-                .username(username)
-                .password(passwordEncoder.encode(password))
-                .role(role)
-                .location(location)
-                .patient(patient)
-                .doctor(doctor)
-                .twoFactorEnabled(false)
-                .build());
+        UserAccount ua = new UserAccount();
+        ua.setUsername(username);
+        ua.setPassword(passwordEncoder.encode(password));
+        ua.setRole(role);
+        ua.setLocation(location);
+        ua.setPatient(patient);
+        ua.setDoctor(doctor);
+        ua.setTwoFactorEnabled(false);
+        userAccountRepository.save(ua);
     }
 
     private Department ensureDepartment(String name, Double fee) {
         return departmentRepository.findByNameIgnoreCase(name)
-                .orElseGet(() -> departmentRepository.save(Department.builder()
-                        .name(name)
-                        .consultationFee(fee)
-                        .build()));
+                .orElseGet(() -> {
+                    Department department = new Department();
+                    department.setName(name);
+                    department.setConsultationFee(fee);
+                    return departmentRepository.save(department);
+                });
     }
 
     private Doctor ensureDoctor(String name, String contact, String specialization, Department department) {
         return doctorRepository.findByNameIgnoreCase(name)
-                .orElseGet(() -> doctorRepository.save(Doctor.builder()
-                        .name(name)
-                        .contact(contact)
-                        .specialization(specialization)
-                        .department(department)
-                        .build()));
+                .orElseGet(() -> {
+                    Doctor doctor = new Doctor();
+                    doctor.setName(name);
+                    doctor.setContact(contact);
+                    doctor.setSpecialization(specialization);
+                    doctor.setDepartment(department);
+                    return doctorRepository.save(doctor);
+                });
     }
 
     private Patient ensurePatient(String fullName, int age, String gender, String email, String phone, Location location, Set<Doctor> doctors) {
         return patientRepository.findByEmail(email)
-                .orElseGet(() -> patientRepository.save(Patient.builder()
-                        .fullName(fullName)
-                        .age(age)
-                        .gender(gender)
-                        .email(email)
-                        .phone(phone)
-                        .location(location)
-                        .doctors(doctors)
-                        .build()));
+                .orElseGet(() -> {
+                    Patient patient = new Patient();
+                    patient.setFullName(fullName);
+                    patient.setAge(age);
+                    patient.setGender(gender);
+                    patient.setEmail(email);
+                    patient.setPhone(phone);
+                    patient.setLocation(location);
+                    patient.getDoctors().addAll(doctors);
+                    return patientRepository.save(patient);
+                });
     }
 }

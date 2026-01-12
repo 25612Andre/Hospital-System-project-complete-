@@ -1,5 +1,6 @@
 import React from "react";
 import Pagination from "./Pagination";
+import { useI18n } from "../../i18n/I18nProvider";
 
 export interface Column<T> {
   key: keyof T | string;
@@ -24,6 +25,8 @@ function AppTable<T extends { id?: number | string }>({
   size,
   onPageChange,
 }: Props<T>) {
+  const { t } = useI18n();
+
   return (
     <div className="border border-slate-200 rounded-xl shadow-md bg-white overflow-hidden">
       <table className="w-full border-collapse">
@@ -54,7 +57,7 @@ function AppTable<T extends { id?: number | string }>({
           {data.length === 0 && (
             <tr>
               <td className="px-4 py-6 text-center text-slate-500" colSpan={columns.length}>
-                No data found
+                {t("common.noDataFound")}
               </td>
             </tr>
           )}

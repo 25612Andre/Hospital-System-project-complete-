@@ -17,6 +17,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -45,7 +46,14 @@ public class AuthController {
             UserAccount ua = userAccountService.authenticate(request);
             Long patientId = ua.getPatient() != null ? ua.getPatient().getId() : null;
             Long doctorId = ua.getDoctor() != null ? ua.getDoctor().getId() : null;
-            AuthResponse.UserInfo info = new AuthResponse.UserInfo(ua.getId(), ua.getUsername(), ua.getRole(), patientId, doctorId);
+            AuthResponse.UserInfo info = new AuthResponse.UserInfo(
+                    ua.getId(),
+                    ua.getUsername(),
+                    ua.getRole(),
+                    patientId,
+                    doctorId,
+                    ua.getProfilePictureUrl()
+            );
             boolean requiresTwoFactor = enforce2fa || ua.isTwoFactorEnabled();
             if (!requiresTwoFactor) {
                 String token = jwtService.generateToken(ua);
@@ -113,7 +121,14 @@ public class AuthController {
             Long doctorId = ua.getDoctor() != null ? ua.getDoctor().getId() : null;
             String token = jwtService.generateToken(ua);
             return ResponseEntity.ok(new AuthResponse(token,
-                    new AuthResponse.UserInfo(ua.getId(), ua.getUsername(), ua.getRole(), patientId, doctorId), false));
+                    new AuthResponse.UserInfo(
+                            ua.getId(),
+                            ua.getUsername(),
+                            ua.getRole(),
+                            patientId,
+                            doctorId,
+                            ua.getProfilePictureUrl()
+                    ), false));
         } catch (RuntimeException ex) {
             return ResponseEntity.status(401).build();
         }
@@ -137,15 +152,14 @@ public class AuthController {
     }
 
     @PostMapping(value = "/signup", consumes = {"multipart/form-data"})
-    public ResponseEntity<?> signup(
-            @Valid @org.springframework.web.bind.annotation.ModelAttribute UserAccountRequest request,
+    public ResponseEntity<UserAccount> signup(
+            @Valid @NonNull @org.springframework.web.bind.annotation.ModelAttribute UserAccountRequest request,
             @org.springframework.web.bind.annotation.RequestParam(value = "profilePicture", required = false) 
             org.springframework.web.multipart.MultipartFile profilePicture) {
-        try {
-            UserAccount created = userAccountService.create(request, profilePicture);
-            return ResponseEntity.ok(created);
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(java.util.Map.of("error", e.getMessage()));
-        }
+        // Enforce PATIENT role for public signup.
+        // Doctors and Admins must be created by an existing Admin.
+        request.setRole(com.example.hospitalmanagement.model.enums.Role.PATIENT);
+        UserAccount created = userAccountService.create(request, profilePicture);
+        return ResponseEntity.ok(created);
     }
 }

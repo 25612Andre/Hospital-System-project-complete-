@@ -11,7 +11,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import java.util.HashSet;
 import java.util.Set;
-import com.example.hospitalmanagement.model.Location;
 
 @Entity
 @Table(name = "patients")

@@ -18,6 +18,7 @@ import DepartmentListPage from "../pages/departments/DepartmentListPage";
 import DoctorListPage from "../pages/doctors/DoctorListPage";
 import SearchResultsPage from "../pages/search/SearchResultsPage";
 import ProfilePage from "../pages/profile/ProfilePage";
+import VoiceMessagesPage from "../pages/messages/VoiceMessagesPage";
 import NotificationsReportPage from "../pages/notifications/NotificationsReportPage";
 import MainLayout from "../components/layout/MainLayout";
 import { useAuth } from "../context/useAuth";
@@ -118,6 +119,14 @@ const AppRouter: React.FC = () => (
                   element={
                     <RoleGuard allowed={allAuth}>
                       <AppointmentListPage />
+                    </RoleGuard>
+                  }
+                />
+                <Route
+                  path="/messages"
+                  element={
+                    <RoleGuard allowed={allAuth}>
+                      <VoiceMessagesPage />
                     </RoleGuard>
                   }
                 />

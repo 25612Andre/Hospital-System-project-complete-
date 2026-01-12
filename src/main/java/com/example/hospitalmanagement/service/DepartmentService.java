@@ -22,7 +22,7 @@ public class DepartmentService {
         return repository.findAll();
     }
 
-    public Page<Department> getPage(Pageable pageable) {
+    public Page<Department> getPage(@NonNull Pageable pageable) {
         return repository.findAll(pageable);
     }
 

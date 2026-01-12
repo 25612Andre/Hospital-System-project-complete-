@@ -6,6 +6,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -52,4 +54,23 @@ public interface LocationRepository extends JpaRepository<Location, Long>, JpaSp
     
     // For SearchService global search
     Page<Location> findByNameContainingIgnoreCaseOrCodeContainingIgnoreCase(String name, String code, Pageable pageable);
+
+    /**
+     * Resolve the full name-path for a location (root -> ... -> leaf) in a single query.
+     */
+    @Query(value = """
+            WITH RECURSIVE ancestors AS (
+                SELECT id, name, parent_id, 1 AS depth
+                FROM locations
+                WHERE id = :id
+                UNION ALL
+                SELECT l.id, l.name, l.parent_id, a.depth + 1
+                FROM locations l
+                JOIN ancestors a ON a.parent_id = l.id
+            )
+            SELECT name
+            FROM ancestors
+            ORDER BY depth DESC
+            """, nativeQuery = true)
+    List<String> findPathNames(@Param("id") Long id);
 }

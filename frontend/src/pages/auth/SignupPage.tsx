@@ -1,17 +1,16 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { authApi } from "../../api/authApi";
-import { departmentApi, type Department } from "../../api/departmentApi";
 import AppButton from "../../components/common/AppButton";
 import HierarchicalLocationPicker from "../../components/common/HierarchicalLocationPicker";
 import { toast } from "react-toastify";
 import type { LocationNode } from "../../api/locationApi";
-
-const roles = ["PATIENT", "DOCTOR"];
+import LanguageSelect from "../../components/common/LanguageSelect";
+import { useI18n } from "../../i18n/I18nProvider";
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [form, setForm] = useState({
     username: "",
     password: "",
@@ -19,21 +18,12 @@ const SignupPage: React.FC = () => {
     role: "PATIENT",
     fullName: "",
     age: "",
-    gender: "Please Select",
+    gender: "",
     phone: "",
     locationId: null as number | null,
-    // Doctor specific
-    departmentId: "",
-    specialization: "",
   });
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string>("");
-
-  const { data: departments } = useQuery<Department[]>({
-    queryKey: ["departments-all"],
-    queryFn: departmentApi.listAll,
-    enabled: form.role === "DOCTOR",
-  });
 
   const handleLocationChange = (locationId: number | null, _location: LocationNode | null) => {
     setForm({ ...form, locationId });
@@ -42,38 +32,28 @@ const SignupPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (form.password !== form.confirm) {
-      toast.error("Passwords do not match");
+      toast.error(t("signup.validation.passwordMismatch"));
       return;
     }
 
     // Validation
-    if (form.role === "PATIENT") {
-      if (!form.fullName || !form.age || !form.phone || !form.locationId || form.gender === "Please Select") {
-        toast.error("Please fill in all patient registration details.");
-        return;
-      }
-    }
-    if (form.role === "DOCTOR") {
-      if (!form.fullName || !form.phone || !form.departmentId || !form.locationId) {
-        toast.error("Please fill in all doctor registration details.");
-        return;
-      }
+    if (!form.fullName || !form.age || !form.phone || !form.locationId || !form.gender) {
+      toast.error(t("signup.validation.patientDetails"));
+      return;
     }
 
     try {
       await authApi.signup({
         username: form.username,
         password: form.password,
-        role: form.role,
+        role: "PATIENT",
         fullName: form.fullName,
         phone: form.phone,
-        age: form.role === "PATIENT" ? Number(form.age) : undefined,
-        gender: form.role === "PATIENT" ? form.gender : undefined,
+        age: Number(form.age),
+        gender: form.gender,
         locationId: form.locationId || undefined,
-        departmentId: (form.role === "DOCTOR" && form.departmentId) ? Number(form.departmentId) : undefined,
-        specialization: (form.role === "DOCTOR") ? form.specialization : undefined,
       }, profilePicture || undefined);
-      toast.success("Account created successfully. Please login.");
+      toast.success(t("signup.success"));
       navigate("/login");
     } catch (err: any) {
       const msg = err.response?.data?.message || err.response?.data?.error || err.message || "Signup failed.";
@@ -82,17 +62,20 @@ const SignupPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4 py-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4 py-8 relative">
+      <div className="absolute right-4 top-4">
+        <LanguageSelect />
+      </div>
       <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-lg space-y-5 border border-slate-100 my-8">
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-slate-800">Create Account</h1>
+          <h1 className="text-3xl font-bold text-slate-800">{t("signup.createAccount")}</h1>
           <p className="text-slate-500 mt-2 text-sm">
-            Join our medical platform.
+            {t("signup.joinPlatform")}
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">Email / Username</label>
+          <label className="block text-sm font-medium text-slate-700 mb-1">{t("signup.emailUsername")}</label>
           <input
             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
             value={form.username}
@@ -105,7 +88,7 @@ const SignupPage: React.FC = () => {
 
         {/* Profile Picture Upload */}
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">Profile Picture (Optional)</label>
+          <label className="block text-sm font-medium text-slate-700 mb-2">{t("signup.profilePictureOptional")}</label>
           <div className="flex items-center gap-4">
             {/* Preview */}
             <div className="w-20 h-20 rounded-full bg-slate-100 border-2 border-slate-300 flex items-center justify-center overflow-hidden">
@@ -140,7 +123,7 @@ const SignupPage: React.FC = () => {
                 htmlFor="profile-picture"
                 className="inline-block cursor-pointer bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
               >
-                📷 Choose Photo
+                {t("common.choosePhoto")}
               </label>
               {profilePicture && (
                 <button
@@ -151,17 +134,17 @@ const SignupPage: React.FC = () => {
                   }}
                   className="ml-2 text-sm text-red-600 hover:text-red-700"
                 >
-                  Remove
+                  {t("common.remove")}
                 </button>
               )}
-              <p className="text-xs text-slate-500 mt-1">JPG, PNG or GIF (max 5MB)</p>
+              <p className="text-xs text-slate-500 mt-1">JPG, PNG, GIF, or WEBP (max 5MB)</p>
             </div>
           </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">{t("common.password")}</label>
             <input
               type="password"
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
@@ -172,7 +155,7 @@ const SignupPage: React.FC = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700 mb-1">Confirm</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1">{t("signup.confirm")}</label>
             <input
               type="password"
               className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none"
@@ -183,154 +166,75 @@ const SignupPage: React.FC = () => {
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-slate-700 mb-1">I am a...</label>
-          <div className="flex bg-slate-100 p-1 rounded-lg">
-            {roles.map(r => (
-              <button
-                key={r}
-                type="button"
-                onClick={() => setForm({
-                  ...form,
-                  role: r,
-                })}
-                className={`flex-1 py-1.5 text-sm font-medium rounded-md transition-all ${form.role === r ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-                  }`}
+        <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
+          <h3 className="text-sm font-semibold text-slate-900 border-b pb-2 mb-2">{t("signup.patientDetails")}</h3>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1">{t("signup.fullName")}</label>
+            <input
+              className="w-full border rounded px-3 py-2 text-sm"
+              value={form.fullName}
+              onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+              placeholder="John Doe"
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">{t("signup.age")}</label>
+              <input
+                type="number"
+                className="w-full border rounded px-3 py-2 text-sm"
+                value={form.age}
+                onChange={(e) => setForm({ ...form, age: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1">{t("signup.gender")}</label>
+              <select
+                className="w-full border rounded px-3 py-2 text-sm"
+                value={form.gender}
+                onChange={(e) => setForm({ ...form, gender: e.target.value })}
+                required
               >
-                {r.charAt(0) + r.slice(1).toLowerCase()}
-              </button>
-            ))}
+                <option value="">{t("signup.gender.select")}</option>
+                <option value="MALE">{t("signup.gender.male")}</option>
+                <option value="FEMALE">{t("signup.gender.female")}</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-slate-700 mb-1">{t("signup.phone")}</label>
+            <input
+              className="w-full border rounded px-3 py-2 text-sm"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              placeholder="+250..."
+              required
+            />
+          </div>
+
+          <div>
+            <HierarchicalLocationPicker
+              value={form.locationId}
+              onChange={handleLocationChange}
+              label={t("common.location")}
+              required
+            />
           </div>
         </div>
 
-        {form.role === "PATIENT" && (
-          <div className="bg-slate-50 p-4 rounded-lg border border-slate-200 space-y-3">
-            <h3 className="text-sm font-semibold text-slate-900 border-b pb-2 mb-2">Patient Details</h3>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Full Name</label>
-              <input
-                className="w-full border rounded px-3 py-2 text-sm"
-                value={form.fullName}
-                onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                placeholder="John Doe"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Age</label>
-                <input
-                  type="number"
-                  className="w-full border rounded px-3 py-2 text-sm"
-                  value={form.age}
-                  onChange={(e) => setForm({ ...form, age: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-slate-700 mb-1">Gender</label>
-                <select
-                  className="w-full border rounded px-3 py-2 text-sm"
-                  value={form.gender}
-                  onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                >
-                  <option>Please Select</option>
-                  <option value="MALE">Male</option>
-                  <option value="FEMALE">Female</option>
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-slate-700 mb-1">Phone</label>
-              <input
-                className="w-full border rounded px-3 py-2 text-sm"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="+250..."
-              />
-            </div>
-
-            <div>
-              <HierarchicalLocationPicker
-                value={form.locationId}
-                onChange={handleLocationChange}
-                label="Location"
-                required
-              />
-            </div>
-          </div>
-        )}
-
-        {form.role === "DOCTOR" && (
-          <div className="bg-blue-50 p-4 rounded-lg border border-blue-100 space-y-3">
-            <h3 className="text-sm font-semibold text-blue-900 border-b border-blue-200 pb-2 mb-2">Doctor Profile</h3>
-
-            <div>
-              <label className="block text-xs font-medium text-blue-800 mb-1">Full Name (Dr.)</label>
-              <input
-                className="w-full border rounded px-3 py-2 text-sm"
-                value={form.fullName}
-                onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                placeholder="Dr. Jane Doe"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-blue-800 mb-1">Phone</label>
-              <input
-                className="w-full border rounded px-3 py-2 text-sm"
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="+250..."
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-blue-800 mb-1">Department</label>
-              <select
-                className="w-full border rounded px-3 py-2 text-sm"
-                value={form.departmentId}
-                onChange={(e) => setForm({ ...form, departmentId: e.target.value })}
-              >
-                <option value="">Select Department...</option>
-                {departments?.map(dept => (
-                  <option key={dept.id} value={dept.id}>
-                    {dept.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-medium text-blue-800 mb-1">Top Specialization (Optional)</label>
-              <input
-                className="w-full border rounded px-3 py-2 text-sm"
-                value={form.specialization}
-                onChange={(e) => setForm({ ...form, specialization: e.target.value })}
-                placeholder="e.g. Pediatric Surgery"
-              />
-            </div>
-
-            <div>
-              <HierarchicalLocationPicker
-                value={form.locationId}
-                onChange={handleLocationChange}
-                label="Location"
-                required
-              />
-            </div>
-          </div>
-        )}
-
         <AppButton type="submit" className="w-full py-2.5 text-lg shadow-lg shadow-blue-500/30">
-          Sign Up
+          {t("signup.signUp")}
         </AppButton>
 
         <div className="text-sm text-center text-slate-500">
-          Already have an account?{" "}
+          {t("signup.haveAccount")}{" "}
           <Link to="/login" className="text-blue-600 font-semibold hover:text-blue-700 hover:underline">
-            Sign In
+            {t("signup.signIn")}
           </Link>
         </div>
       </form>

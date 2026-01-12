@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.lang.NonNull;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -46,19 +47,18 @@ public class AuditLogService {
         UserAccount user = userAccountRepository.findByUsername(username)
             .orElseThrow(() -> new RuntimeException("User not found: " + username));
 
-        AuditLog auditLog = AuditLog.builder()
-            .entityType(request.getEntityType())
-            .entityId(request.getEntityId())
-            .action(request.getAction())
-            .performedBy(username)
-            .performedByUserId(user.getId())
-            .reason(request.getReason())
-            .oldValue(request.getOldValue())
-            .newValue(request.getNewValue())
-            .timestamp(LocalDateTime.now())
-            .ipAddress(getClientIpAddress(httpRequest))
-            .additionalInfo(request.getAdditionalInfo())
-            .build();
+        AuditLog auditLog = new AuditLog();
+        auditLog.setEntityType(request.getEntityType());
+        auditLog.setEntityId(request.getEntityId());
+        auditLog.setAction(request.getAction());
+        auditLog.setPerformedBy(username);
+        auditLog.setPerformedByUserId(user.getId());
+        auditLog.setReason(request.getReason());
+        auditLog.setOldValue(request.getOldValue());
+        auditLog.setNewValue(request.getNewValue());
+        auditLog.setTimestamp(LocalDateTime.now());
+        auditLog.setIpAddress(getClientIpAddress(httpRequest));
+        auditLog.setAdditionalInfo(request.getAdditionalInfo());
 
         auditLog = auditLogRepository.save(auditLog);
         log.info("Audit log created: {} {} on {} #{} by {}", 
@@ -86,17 +86,16 @@ public class AuditLogService {
             String oldValueJson = oldValue != null ? objectMapper.writeValueAsString(oldValue) : null;
             String newValueJson = newValue != null ? objectMapper.writeValueAsString(newValue) : null;
 
-            AuditLog auditLog = AuditLog.builder()
-                .entityType(entityType)
-                .entityId(entityId)
-                .action(action)
-                .performedBy(username)
-                .performedByUserId(user.getId())
-                .reason(reason)
-                .oldValue(oldValueJson)
-                .newValue(newValueJson)
-                .timestamp(LocalDateTime.now())
-                .build();
+            AuditLog auditLog = new AuditLog();
+            auditLog.setEntityType(entityType);
+            auditLog.setEntityId(entityId);
+            auditLog.setAction(action);
+            auditLog.setPerformedBy(username);
+            auditLog.setPerformedByUserId(user.getId());
+            auditLog.setReason(reason);
+            auditLog.setOldValue(oldValueJson);
+            auditLog.setNewValue(newValueJson);
+            auditLog.setTimestamp(LocalDateTime.now());
 
             auditLogRepository.save(auditLog);
             log.debug("Audit log created: {} {} on {} #{}", action, entityType, entityType, entityId);
@@ -110,7 +109,7 @@ public class AuditLogService {
     /**
      * Get all audit logs with pagination
      */
-    public Page<AuditLogDTO> getAllAuditLogs(Pageable pageable) {
+    public Page<AuditLogDTO> getAllAuditLogs(@NonNull Pageable pageable) {
         return auditLogRepository.findAllByOrderByTimestampDesc(pageable)
             .map(this::convertToDTO);
     }
@@ -124,7 +123,7 @@ public class AuditLogService {
             Long userId,
             LocalDateTime startDate,
             LocalDateTime endDate,
-            Pageable pageable) {
+            @NonNull Pageable pageable) {
         return auditLogRepository.searchAuditLogs(entityType, action, userId, startDate, endDate, pageable)
             .map(this::convertToDTO);
     }
@@ -142,7 +141,7 @@ public class AuditLogService {
     /**
      * Get audit logs by user
      */
-    public Page<AuditLogDTO> getAuditLogsByUser(Long userId, Pageable pageable) {
+    public Page<AuditLogDTO> getAuditLogsByUser(Long userId, @NonNull Pageable pageable) {
         return auditLogRepository.findByPerformedByUserIdOrderByTimestampDesc(userId, pageable)
             .map(this::convertToDTO);
     }

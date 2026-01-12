@@ -28,7 +28,7 @@ public class BillingController {
     private final com.example.hospitalmanagement.auth.service.UserAccountService userAccountService;
     
     @GetMapping("/page")
-    public ResponseEntity<Page<Bill>> getPage(@PageableDefault(sort = "id") Pageable pageable,
+    public ResponseEntity<Page<Bill>> getPage(@NonNull @PageableDefault(sort = "id") Pageable pageable,
                                               java.security.Principal principal) {
         Long patientId = null;
         Long doctorId = null;
@@ -47,7 +47,7 @@ public class BillingController {
 
     @GetMapping("/search")
     public ResponseEntity<Page<Bill>> search(@RequestParam @NonNull String q,
-                                             @PageableDefault(sort = "issuedDate") Pageable pageable,
+                                             @NonNull @PageableDefault(sort = "issuedDate") Pageable pageable,
                                              java.security.Principal principal) {
         Long patientId = null;
         if (principal != null) {
@@ -71,7 +71,7 @@ public class BillingController {
     }
 
     @PutMapping("/{id}/status")
-    public ResponseEntity<Bill> updateStatus(@PathVariable @NonNull Long id, @RequestBody String status) {
+    public ResponseEntity<Bill> updateStatus(@PathVariable @NonNull Long id, @RequestBody @NonNull String status) {
         return ResponseEntity.ok(billingService.updateStatus(id, status));
     }
 

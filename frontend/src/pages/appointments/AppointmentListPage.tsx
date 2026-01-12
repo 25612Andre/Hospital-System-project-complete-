@@ -10,6 +10,8 @@ import { doctorApi, type Doctor } from "../../api/doctorApi";
 import { personApi, type Person, type PagedResult } from "../../api/personApi";
 import StatsBar from "../../components/common/StatsBar";
 import { useAuth } from "../../context/useAuth";
+import ConsultationNoteModal from "./ConsultationNoteModal";
+import { useI18n } from "../../i18n/I18nProvider";
 
 const emptyForm = {
   doctorId: "",
@@ -26,8 +28,10 @@ const AppointmentListPage: React.FC = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [form, setForm] = useState<typeof emptyForm>(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [consultationAppointment, setConsultationAppointment] = useState<Appointment | null>(null);
   const queryClient = useQueryClient();
   const { roles, user } = useAuth();
+  const { t } = useI18n();
 
   const isDoctor = roles.includes("DOCTOR");
   const isPatient = roles.includes("PATIENT");
@@ -86,17 +90,20 @@ const AppointmentListPage: React.FC = () => {
     setEditingId(null);
   };
 
+  const openConsultationNote = (appointment: Appointment) => setConsultationAppointment(appointment);
+  const closeConsultationNote = () => setConsultationAppointment(null);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const selectedDate = new Date(form.appointmentDate);
     const year = selectedDate.getFullYear();
     if (isNaN(year) || year > 2100 || year < 1900) {
-      toast.error("Please enter a valid year between 1900 and 2100.");
+      toast.error(t("appointments.toast.validYear"));
       return;
     }
 
     if (!form.doctorId || !form.patientId || !form.appointmentDate) {
-      toast.error("All fields are required");
+      toast.error(t("appointments.toast.required"));
       return;
     }
     let dateStr = form.appointmentDate;
@@ -117,16 +124,16 @@ const AppointmentListPage: React.FC = () => {
     try {
       if (editingId) {
         await appointmentApi.update(editingId, payload);
-        toast.success("Appointment updated");
+        toast.success(t("appointments.toast.updated"));
       } else {
         await appointmentApi.create(payload);
-        toast.success(isPatient ? "Appointment Requested" : "Appointment created");
+        toast.success(isPatient ? t("appointments.toast.requested") : t("appointments.toast.created"));
       }
       resetForm();
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
     } catch (error: any) {
       console.error(error);
-      const msg = error.response?.data?.message || "Unable to save appointment";
+      const msg = error.response?.data?.message || t("appointments.toast.saveFailed");
       toast.error(msg);
     }
   };
@@ -146,21 +153,21 @@ const AppointmentListPage: React.FC = () => {
   const handleComplete = async (id: number) => {
     try {
       await appointmentApi.complete(id);
-      toast.success("Appointment marked completed");
+      toast.success(t("appointments.toast.completed"));
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
     } catch (e) {
-      toast.error("Failed to complete appointment");
+      toast.error(t("appointments.toast.completeFailed"));
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!window.confirm("Delete this appointment?")) return;
+    if (!window.confirm(t("appointments.confirm.delete"))) return;
     try {
       await appointmentApi.remove(id);
-      toast.success("Appointment deleted");
+      toast.success(t("appointments.toast.deleted"));
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
     } catch (e) {
-      toast.error("Failed to delete appointment");
+      toast.error(t("appointments.toast.deleteFailed"));
     }
   };
 
@@ -168,10 +175,10 @@ const AppointmentListPage: React.FC = () => {
   if (isError) {
     return (
       <div className="space-y-3">
-        <h1 className="text-2xl font-semibold text-slate-800">Appointments</h1>
-        <p className="text-sm text-red-600">Unable to load appointments. Ensure you are logged in.</p>
+        <h1 className="text-2xl font-semibold text-slate-800">{t("appointments.title")}</h1>
+        <p className="text-sm text-red-600">{t("auditLogs.error.loadFailed")}</p> {/* Reusing general error or create a new one. Using auditLogs error as placeholder or just generic */}
         <AppButton variant="secondary" onClick={() => refetch()}>
-          Retry
+          {t("common.retry")}
         </AppButton>
       </div>
     );
@@ -185,8 +192,8 @@ const AppointmentListPage: React.FC = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-semibold text-slate-800">Appointments</h1>
-          <p className="text-sm text-slate-500">Paginated list with scheduling actions and quick completion.</p>
+          <h1 className="text-2xl font-semibold text-slate-800">{t("appointments.title")}</h1>
+          <p className="text-sm text-slate-500">{t("appointments.subtitle")}</p>
         </div>
         <div className="flex gap-2">
           <SearchInput
@@ -195,22 +202,22 @@ const AppointmentListPage: React.FC = () => {
               setTerm(e.target.value);
               setPage(0);
             }}
-            placeholder="Search by doctor or patient..."
+            placeholder={t("appointments.searchPlaceholder")}
           />
           <AppButton variant="secondary" onClick={() => { setTerm(""); setPage(0); }}>
-            Clear
+            {t("common.clear")}
           </AppButton>
-          {canCreate && <AppButton onClick={() => setFormOpen(true)}>{isPatient ? "Request Appointment" : "New Appointment"}</AppButton>}
+          {canCreate && <AppButton onClick={() => setFormOpen(true)}>{isPatient ? t("appointments.request") : t("appointments.new")}</AppButton>}
         </div>
       </div>
 
       {data && (
         <StatsBar
           items={[
-            { label: "Total Appointments", value: total },
-            { label: "Scheduled", value: statusCounts["Scheduled"] || 0 },
-            { label: "Completed", value: statusCounts["Completed"] || 0 },
-            { label: "Pending", value: statusCounts["Requested"] || 0 },
+            { label: t("appointments.stats.total"), value: total },
+            { label: t("appointments.stats.scheduled"), value: statusCounts["Scheduled"] || 0 },
+            { label: t("appointments.stats.completed"), value: statusCounts["Completed"] || 0 },
+            { label: t("appointments.stats.pending"), value: statusCounts["Requested"] || 0 },
           ]}
         />
       )}
@@ -221,7 +228,7 @@ const AppointmentListPage: React.FC = () => {
           className="bg-white border rounded-lg shadow-sm p-4 grid grid-cols-1 md:grid-cols-2 gap-4"
         >
           <div>
-            <label className="block text-sm mb-1">Doctor</label>
+            <label className="block text-sm mb-1">{t("appointments.form.doctor")}</label>
             <select
               className="w-full border rounded px-3 py-2 disabled:bg-slate-100 disabled:text-slate-500"
               value={form.doctorId}
@@ -238,7 +245,7 @@ const AppointmentListPage: React.FC = () => {
               required
               disabled={!!user?.doctorId && isDoctor}
             >
-              <option value="">Select doctor</option>
+              <option value="">{t("appointments.form.selectDoctor")}</option>
               {doctorOptions.map((doc) => (
                 <option key={doc.id} value={doc.id}>
                   {doc.name} - {doc.specialization} ({doc.department?.name}) - {doc.department?.consultationFee} RWF
@@ -247,10 +254,10 @@ const AppointmentListPage: React.FC = () => {
             </select>
           </div>
           <div>
-            <label className="block text-sm mb-1">Patient</label>
+            <label className="block text-sm mb-1">{t("appointments.form.patient")}</label>
             {isPatient ? (
               <div className="w-full border rounded px-3 py-2 bg-slate-100 text-slate-600">
-                {user?.username} (You)
+                {user?.username} {t("appointments.form.you")}
               </div>
             ) : (
               <select
@@ -260,7 +267,7 @@ const AppointmentListPage: React.FC = () => {
                 required
                 disabled={!!editingId} // Disable if editing existing appointment
               >
-                <option value="">Select patient</option>
+                <option value="">{t("appointments.form.selectPatient")}</option>
                 {patientOptions.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.fullName} ({p.email})
@@ -270,7 +277,7 @@ const AppointmentListPage: React.FC = () => {
             )}
           </div>
           <div>
-            <label className="block text-sm mb-1">Date & time</label>
+            <label className="block text-sm mb-1">{t("appointments.form.date")}</label>
             <input
               type="datetime-local"
               className="w-full border rounded px-3 py-2"
@@ -281,21 +288,21 @@ const AppointmentListPage: React.FC = () => {
           </div>
           {!isPatient && (
             <div>
-              <label className="block text-sm mb-1">Status</label>
+              <label className="block text-sm mb-1">{t("appointments.form.status")}</label>
               <select
                 className="w-full border rounded px-3 py-2"
                 value={form.status}
                 onChange={(e) => setForm({ ...form, status: e.target.value })}
               >
-                <option value="Scheduled">Scheduled</option>
-                <option value="Completed">Completed</option>
-                <option value="Cancelled">Cancelled</option>
-                <option value="Requested">Requested (Pending)</option>
+                <option value="Scheduled">{t("appointments.status.scheduled")}</option>
+                <option value="Completed">{t("appointments.status.completed")}</option>
+                <option value="Cancelled">{t("appointments.status.cancelled")}</option>
+                <option value="Requested">{t("appointments.status.requested")}</option>
               </select>
             </div>
           )}
           <div>
-            <label className="block text-sm mb-1">Consultation fee (Auto-filled)</label>
+            <label className="block text-sm mb-1">{t("appointments.form.fee")}</label>
             <input
               type="number"
               className="w-full border rounded px-3 py-2 bg-slate-100 cursor-not-allowed text-slate-600"
@@ -308,9 +315,9 @@ const AppointmentListPage: React.FC = () => {
           </div>
           <div className="md:col-span-2 flex justify-end gap-2">
             <AppButton type="button" variant="secondary" onClick={resetForm}>
-              Cancel
+              {t("common.cancel")}
             </AppButton>
-            <AppButton type="submit">{editingId ? "Update" : (isPatient ? "Send Request" : "Create")}</AppButton>
+            <AppButton type="submit">{editingId ? t("common.update") : (isPatient ? t("appointments.form.sendRequest") : t("common.create"))}</AppButton>
           </div>
         </form>
       )
@@ -321,84 +328,101 @@ const AppointmentListPage: React.FC = () => {
           { key: "id", header: "ID" },
           {
             key: "appointmentDate",
-            header: "Date",
+            header: t("appointments.form.date"),
             render: (row: Appointment) => new Date(row.appointmentDate).toLocaleString(),
           },
-          { key: "status", header: "Status" },
+          { key: "status", header: t("appointments.form.status") },
           {
             key: "doctor",
-            header: "Doctor",
+            header: t("appointments.form.doctor"),
             render: (row: Appointment) => row.doctor?.name || "N/A",
           },
           {
             key: "patient",
-            header: "Patient",
+            header: t("appointments.form.patient"),
             render: (row: Appointment) => row.patient?.fullName || "N/A",
           },
           {
             key: "actions",
-            header: "Actions",
-            render: (row: Appointment) => (
-              <div className="flex gap-2">
-                {/* Doctor Approval Actions */}
-                {isDoctor && row.status === "Requested" && (
-                  <>
-                    <AppButton
-                      variant="primary"
-                      className="bg-green-600 hover:bg-green-700 text-white border-green-600"
-                      onClick={async () => {
-                        try {
-                          if (!row.doctor?.id || !row.patient?.id) return;
-                          await appointmentApi.update(row.id, { ...row, status: "Scheduled", doctorId: row.doctor.id, patientId: row.patient.id });
-                          toast.success("Appointment Approved");
-                          queryClient.invalidateQueries({ queryKey: ["appointments"] });
-                        } catch (e) { toast.error("Failed to approve"); }
-                      }}
-                    >
-                      Approve
-                    </AppButton>
-                    <AppButton
-                      variant="secondary"
-                      className="text-red-600 border-red-200 hover:bg-red-50"
-                      onClick={async () => {
-                        try {
-                          if (!row.doctor?.id || !row.patient?.id) return;
-                          await appointmentApi.update(row.id, { ...row, status: "Cancelled", doctorId: row.doctor.id, patientId: row.patient.id });
-                          toast.success("Appointment Rejected");
-                          queryClient.invalidateQueries({ queryKey: ["appointments"] });
-                        } catch (e) { toast.error("Failed to reject"); }
-                      }}
-                    >
-                      Reject
-                    </AppButton>
-                  </>
-                )}
+            header: t("common.actions"),
+            render: (row: Appointment) => {
+              const status = (row.status || "").toLowerCase();
+              const isRequestedRow = status === "requested";
+              const isCancelledRow = status === "cancelled";
+              const isCompletedRow = status === "completed";
 
-                {/* Edit/Delete Management */}
-                {(canManage || (isPatient && row.status === "Requested")) && (
-                  <>
-                    <AppButton variant="secondary" onClick={() => handleEdit(row)}>
-                      Edit
-                    </AppButton>
-                    {canManage && row.status !== "Completed" && row.status !== "Requested" && (
-                      <AppButton variant="secondary" onClick={() => handleComplete(row.id)}>
-                        Complete
+              return (
+                <div className="flex gap-2">
+                  {/* Doctor Approval Actions */}
+                  {isDoctor && isRequestedRow && (
+                    <>
+                      <AppButton
+                        variant="primary"
+                        className="bg-green-600 hover:bg-green-700 text-white border-green-600"
+                        onClick={async () => {
+                          try {
+                            if (!row.doctor?.id || !row.patient?.id) return;
+                            await appointmentApi.update(row.id, { ...row, status: "Scheduled", doctorId: row.doctor.id, patientId: row.patient.id });
+                            toast.success(t("appointments.toast.approved"));
+                            queryClient.invalidateQueries({ queryKey: ["appointments"] });
+                          } catch (e) { toast.error(t("appointments.toast.approveFailed")); }
+                        }}
+                      >
+                        {t("appointments.action.approve")}
                       </AppButton>
-                    )}
-                    <AppButton
-                      variant="secondary"
-                      className="text-red-600 hover:text-red-700 hover:border-red-200"
-                      onClick={() => handleDelete(row.id)}
-                    >
-                      Delete
+                      <AppButton
+                        variant="secondary"
+                        className="text-red-600 border-red-200 hover:bg-red-50"
+                        onClick={async () => {
+                          try {
+                            if (!row.doctor?.id || !row.patient?.id) return;
+                            await appointmentApi.update(row.id, { ...row, status: "Cancelled", doctorId: row.doctor.id, patientId: row.patient.id });
+                            toast.success(t("appointments.toast.rejected"));
+                            queryClient.invalidateQueries({ queryKey: ["appointments"] });
+                          } catch (e) { toast.error(t("appointments.toast.rejectFailed")); }
+                        }}
+                      >
+                        {t("appointments.action.reject")}
+                      </AppButton>
+                    </>
+                  )}
+
+                  {/* Edit/Delete Management */}
+                  {(canManage || (isPatient && isRequestedRow)) && (
+                    <>
+                      <AppButton variant="secondary" onClick={() => handleEdit(row)}>
+                        {t("common.edit")}
+                      </AppButton>
+                      {canManage && !isCompletedRow && !isRequestedRow && (
+                        <AppButton variant="secondary" onClick={() => handleComplete(row.id)}>
+                          {t("appointments.action.complete")}
+                        </AppButton>
+                      )}
+                      {canManage && !isRequestedRow && !isCancelledRow && (
+                        <AppButton variant="secondary" onClick={() => openConsultationNote(row)}>
+                          {t("appointments.action.observation")}
+                        </AppButton>
+                      )}
+                      <AppButton
+                        variant="secondary"
+                        className="text-red-600 hover:text-red-700 hover:border-red-200"
+                        onClick={() => handleDelete(row.id)}
+                      >
+                        {t("common.delete")}
+                      </AppButton>
+                    </>
+                  )}
+                  {isPatient && isCompletedRow && (
+                    <AppButton variant="secondary" onClick={() => openConsultationNote(row)}>
+                      {t("appointments.action.viewObservation")}
                     </AppButton>
-                  </>
-                )}
-                {!canManage && !isPatient && (
-                  <span className="text-xs text-slate-500">View only</span>
-                )}
-              </div>
-            ),
+                  )}
+                  {!canManage && !isPatient && (
+                    <span className="text-xs text-slate-500">{t("appointments.action.viewOnly")}</span>
+                  )}
+                </div>
+              );
+            },
           },
         ]}
         data={rows}
@@ -407,6 +431,14 @@ const AppointmentListPage: React.FC = () => {
         size={size}
         onPageChange={setPage}
       />
+
+      {consultationAppointment && (
+        <ConsultationNoteModal
+          appointment={consultationAppointment}
+          canEdit={canManage}
+          onClose={closeConsultationNote}
+        />
+      )}
     </div >
   );
 };

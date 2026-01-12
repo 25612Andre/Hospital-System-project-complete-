@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useI18n } from "../../i18n/I18nProvider";
 import { useQuery } from "@tanstack/react-query";
 import { auditLogApi, EntityType, AuditAction } from "../../api/auditLogApi";
 import type { AuditLog, AuditLogSearchParams } from "../../api/auditLogApi";
@@ -7,6 +8,7 @@ import AppButton from "../../components/common/AppButton";
 import { toast } from "react-toastify";
 
 const NotificationsReportPage: React.FC = () => {
+    const { t, language } = useI18n();
     const [page, setPage] = useState(0);
     const [filters, setFilters] = useState<AuditLogSearchParams>({
         page: 0,
@@ -83,7 +85,7 @@ const NotificationsReportPage: React.FC = () => {
 
     const formatDate = (dateString: string) => {
         const date = new Date(dateString);
-        return new Intl.DateTimeFormat("en-US", {
+        return new Intl.DateTimeFormat(language === 'fr' ? 'fr-FR' : 'en-US', {
             year: "numeric",
             month: "short",
             day: "numeric",
@@ -92,20 +94,22 @@ const NotificationsReportPage: React.FC = () => {
         }).format(date);
     };
 
-    const formatEntityType = (entityType: EntityType) => {
-        return entityType.replace(/_/g, " ");
+    const formatEntityType = (entityType: string) => {
+        const key = `auditLogs.entity.${entityType}` as any;
+        const translated = t(key);
+        return translated !== key ? translated : entityType.replace(/_/g, " ");
     };
 
     if (isLoading && !data) return <LoadingSpinner />;
 
     if (isError && !data) {
-        toast.error("Failed to load audit logs.");
+        toast.error(t("auditLogs.error.loadFailed"));
         return (
             <div className="space-y-4">
-                <h1 className="text-2xl font-semibold text-slate-800">Notifications & Audit Report</h1>
-                <p className="text-sm text-red-600">Unable to load data from the server.</p>
+                <h1 className="text-2xl font-semibold text-slate-800">{t("auditLogs.title")}</h1>
+                <p className="text-sm text-red-600">{t("dashboard.error.unableToLoad")}</p>
                 <AppButton variant="secondary" onClick={() => refetch()}>
-                    Retry
+                    {t("common.retry")}
                 </AppButton>
             </div>
         );
@@ -116,10 +120,10 @@ const NotificationsReportPage: React.FC = () => {
             {/* Header */}
             <div>
                 <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-                    Notifications & Audit Report
+                    {t("auditLogs.title")}
                 </h1>
                 <p className="text-slate-500 mt-1">
-                    Track all system changes including who deleted, edited, or updated records
+                    {t("auditLogs.subtitle")}
                 </p>
             </div>
 
@@ -129,7 +133,7 @@ const NotificationsReportPage: React.FC = () => {
                     <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-5 shadow-sm">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-blue-600 uppercase tracking-wide">Total Logs</p>
+                                <p className="text-sm font-medium text-blue-600 uppercase tracking-wide">{t("auditLogs.stats.total")}</p>
                                 <p className="text-3xl font-bold text-blue-900 mt-1">{stats.totalLogs}</p>
                             </div>
                             <div className="p-3 bg-blue-200 bg-opacity-50 rounded-lg">
@@ -143,7 +147,7 @@ const NotificationsReportPage: React.FC = () => {
                     <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-5 shadow-sm">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-green-600 uppercase tracking-wide">Last 24 Hours</p>
+                                <p className="text-sm font-medium text-green-600 uppercase tracking-wide">{t("auditLogs.stats.last24h")}</p>
                                 <p className="text-3xl font-bold text-green-900 mt-1">{stats.last24Hours}</p>
                             </div>
                             <div className="p-3 bg-green-200 bg-opacity-50 rounded-lg">
@@ -157,7 +161,7 @@ const NotificationsReportPage: React.FC = () => {
                     <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-5 shadow-sm">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-purple-600 uppercase tracking-wide">Creates</p>
+                                <p className="text-sm font-medium text-purple-600 uppercase tracking-wide">{t("auditLogs.stats.creates")}</p>
                                 <p className="text-3xl font-bold text-purple-900 mt-1">
                                     {stats.byAction.CREATE || 0}
                                 </p>
@@ -173,7 +177,7 @@ const NotificationsReportPage: React.FC = () => {
                     <div className="bg-gradient-to-br from-red-50 to-red-100 border border-red-200 rounded-xl p-5 shadow-sm">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm font-medium text-red-600 uppercase tracking-wide">Deletes</p>
+                                <p className="text-sm font-medium text-red-600 uppercase tracking-wide">{t("auditLogs.stats.deletes")}</p>
                                 <p className="text-3xl font-bold text-red-900 mt-1">
                                     {stats.byAction.DELETE || 0}
                                 </p>
@@ -190,18 +194,18 @@ const NotificationsReportPage: React.FC = () => {
 
             {/* Filters */}
             <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-                <h2 className="text-lg font-semibold text-slate-800 mb-4">Filters</h2>
+                <h2 className="text-lg font-semibold text-slate-800 mb-4">{t("auditLogs.filters.title")}</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Entity Type
+                            {t("auditLogs.filters.entityType")}
                         </label>
                         <select
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={filters.entityType || ""}
                             onChange={(e) => handleFilterChange("entityType", e.target.value)}
                         >
-                            <option value="">All Types</option>
+                            <option value="">{t("auditLogs.filters.allTypes")}</option>
                             {Object.values(EntityType).map((type) => (
                                 <option key={type} value={type}>
                                     {formatEntityType(type)}
@@ -212,17 +216,17 @@ const NotificationsReportPage: React.FC = () => {
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Action
+                            {t("auditLogs.filters.action")}
                         </label>
                         <select
                             className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                             value={filters.action || ""}
                             onChange={(e) => handleFilterChange("action", e.target.value)}
                         >
-                            <option value="">All Actions</option>
+                            <option value="">{t("auditLogs.filters.allActions")}</option>
                             {Object.values(AuditAction).map((action) => (
                                 <option key={action} value={action}>
-                                    {action}
+                                    {t(`auditLogs.action.${action}` as any)}
                                 </option>
                             ))}
                         </select>
@@ -230,7 +234,7 @@ const NotificationsReportPage: React.FC = () => {
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">
-                            Start Date
+                            {t("auditLogs.filters.startDate")}
                         </label>
                         <input
                             type="datetime-local"
@@ -242,7 +246,7 @@ const NotificationsReportPage: React.FC = () => {
 
                     <div>
                         <label className="block text-sm font-medium text-slate-700 mb-2">
-                            End Date
+                            {t("auditLogs.filters.endDate")}
                         </label>
                         <input
                             type="datetime-local"
@@ -261,10 +265,10 @@ const NotificationsReportPage: React.FC = () => {
                             setPage(0);
                         }}
                     >
-                        Clear Filters
+                        {t("auditLogs.filters.clear")}
                     </AppButton>
                     <AppButton onClick={() => refetch()}>
-                        Refresh
+                        {t("auditLogs.filters.refresh")}
                     </AppButton>
                 </div>
             </div>
@@ -276,22 +280,22 @@ const NotificationsReportPage: React.FC = () => {
                         <thead className="bg-slate-50 border-b border-slate-200">
                             <tr>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                    Timestamp
+                                    {t("auditLogs.table.timestamp")}
                                 </th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                    Action
+                                    {t("auditLogs.table.action")}
                                 </th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                    Entity
+                                    {t("auditLogs.table.entity")}
                                 </th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                    Performed By
+                                    {t("auditLogs.table.performedBy")}
                                 </th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                    Reason
+                                    {t("auditLogs.table.reason")}
                                 </th>
                                 <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                                    IP Address
+                                    {t("auditLogs.table.ipAddress")}
                                 </th>
                             </tr>
                         </thead>
@@ -308,7 +312,7 @@ const NotificationsReportPage: React.FC = () => {
                                                     log.action
                                                 )}`}
                                             >
-                                                {log.action}
+                                                {t(`auditLogs.action.${log.action}` as any)}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -316,7 +320,7 @@ const NotificationsReportPage: React.FC = () => {
                                                 <span className={`text-sm font-medium ${getEntityTypeColor(log.entityType)}`}>
                                                     {formatEntityType(log.entityType)}
                                                 </span>
-                                                <span className="text-xs text-slate-500">ID: {log.entityId}</span>
+                                                <span className="text-xs text-slate-500">{t("search.id")}: {log.entityId}</span>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
@@ -326,13 +330,13 @@ const NotificationsReportPage: React.FC = () => {
                                                 </div>
                                                 <div className="ml-3">
                                                     <p className="text-sm font-medium text-slate-900">{log.performedBy}</p>
-                                                    <p className="text-xs text-slate-500">ID: {log.performedByUserId}</p>
+                                                    <p className="text-xs text-slate-500">{t("search.id")}: {log.performedByUserId}</p>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 text-sm text-slate-700 max-w-xs">
                                             <div className="truncate" title={log.reason || "N/A"}>
-                                                {log.reason || <span className="text-slate-400 italic">No reason provided</span>}
+                                                {log.reason || <span className="text-slate-400 italic">{t("auditLogs.table.noReason")}</span>}
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600">
@@ -347,8 +351,8 @@ const NotificationsReportPage: React.FC = () => {
                                             <svg className="w-16 h-16 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                             </svg>
-                                            <p className="text-lg font-medium">No audit logs found</p>
-                                            <p className="text-sm mt-1">Try adjusting your filters</p>
+                                            <p className="text-lg font-medium">{t("auditLogs.table.noData")}</p>
+                                            <p className="text-sm mt-1">{t("auditLogs.table.adjustFilters")}</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -361,7 +365,7 @@ const NotificationsReportPage: React.FC = () => {
                 {data && data.totalPages > 1 && (
                     <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between">
                         <div className="text-sm text-slate-600">
-                            Showing page {page + 1} of {data.totalPages} ({data.totalElements} total records)
+                            {t("auditLogs.pagination.showing", { page: page + 1, total: data.totalPages, count: data.totalElements })}
                         </div>
                         <div className="flex gap-2">
                             <AppButton
@@ -369,14 +373,14 @@ const NotificationsReportPage: React.FC = () => {
                                 onClick={() => handlePageChange(page - 1)}
                                 disabled={page === 0}
                             >
-                                Previous
+                                {t("pagination.previous")}
                             </AppButton>
                             <AppButton
                                 variant="secondary"
                                 onClick={() => handlePageChange(page + 1)}
                                 disabled={page >= data.totalPages - 1}
                             >
-                                Next
+                                {t("pagination.next")}
                             </AppButton>
                         </div>
                     </div>

@@ -9,6 +9,7 @@ export interface Person {
   gender: string;
   email: string;
   phone: string;
+  profilePictureUrl?: string;
   location?: {
     id?: number;
     name?: string;
@@ -38,13 +39,38 @@ const hasFilters = (filters?: PatientFilters) =>
 
 export const personApi = {
   list: async (params?: { page?: number; size?: number; sort?: string; q?: string; filters?: PatientFilters }) => {
-    if (params?.q) {
+    const hasSearchTerm = params?.q && params.q.trim() !== "";
+    const hasActiveFilters = hasFilters(params?.filters);
+
+    // If we have both a search term AND column filters, use filter endpoint with combined filters
+    if (hasSearchTerm && hasActiveFilters) {
+      // Combine search term with filters - treat search as additional name filter if no name filter exists
+      const combinedFilters = {
+        ...params?.filters,
+        // If name filter is not set, use search term as name filter
+        name: params?.filters?.name || params?.q,
+      };
+      const { data } = await httpClient.get<PagedResult<Person>>("/patients/filter", {
+        params: {
+          ...combinedFilters,
+          page: params?.page,
+          size: params?.size,
+          sort: params?.sort,
+        },
+      });
+      return data;
+    }
+
+    // If only search term is provided, use search endpoint
+    if (hasSearchTerm) {
       const { data } = await httpClient.get<PagedResult<Person>>("/patients/search", {
         params: { q: params.q, page: params.page, size: params.size, sort: params.sort },
       });
       return data;
     }
-    if (hasFilters(params?.filters)) {
+
+    // If only column filters are provided, use filter endpoint
+    if (hasActiveFilters) {
       const { data } = await httpClient.get<PagedResult<Person>>("/patients/filter", {
         params: {
           ...params?.filters,
@@ -55,8 +81,14 @@ export const personApi = {
       });
       return data;
     }
+
+    // No search or filters, get all patients
     const { data } = await httpClient.get<PagedResult<Person>>("/patients/page", {
-      params,
+      params: {
+        page: params?.page,
+        size: params?.size,
+        sort: params?.sort,
+      },
     });
     return data;
   },

@@ -30,27 +30,41 @@ public class PatientService {
         return repository.findAll();
     }
 
-    public Page<Patient> getPage(Pageable pageable) {
+    public Page<Patient> getPage(@NonNull Pageable pageable) {
         return repository.findAll(pageable);
     }
 
-    public Page<Patient> getPage(Pageable pageable, Long doctorId) {
+    public Page<Patient> getPage(@NonNull Pageable pageable, Long doctorId) {
         if (doctorId != null) {
             return repository.findByDoctors_Id(doctorId, pageable);
         }
         return repository.findAll(pageable);
     }
 
-    public Page<Patient> search(@NonNull String term, Pageable pageable) {
+    public Page<Patient> search(@NonNull String term, @NonNull Pageable pageable) {
+        return search(term, pageable, null);
+    }
+
+    public Page<Patient> search(@NonNull String term, @NonNull Pageable pageable, Long doctorId) {
+        if (doctorId != null) {
+            return repository.searchForDoctor(doctorId, term, pageable);
+        }
         return repository.findByFullNameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrPhoneContainingIgnoreCase(
                 term, term, term, pageable);
     }
 
-    public Page<Patient> filter(String name, String email, String phone, String gender, Pageable pageable) {
-        String normalizedGender = (gender == null || gender.isBlank()) ? null : gender;
+    public Page<Patient> filter(String name, String email, String phone, String gender, @NonNull Pageable pageable) {
+        return filter(name, email, phone, gender, pageable, null);
+    }
+
+    public Page<Patient> filter(String name, String email, String phone, String gender, @NonNull Pageable pageable, Long doctorId) {
+        String normalizedGender = normalizeGenderFilter(gender);
         String nameFilter = normalizeFilter(name);
         String emailFilter = normalizeFilter(email);
         String phoneFilter = normalizeFilter(phone);
+        if (doctorId != null) {
+            return repository.filterPatientsForDoctor(doctorId, nameFilter, emailFilter, phoneFilter, normalizedGender, pageable);
+        }
         return repository.filterPatients(nameFilter, emailFilter, phoneFilter, normalizedGender, pageable);
     }
 
@@ -73,6 +87,7 @@ public class PatientService {
 
     @org.springframework.transaction.annotation.Transactional
     public Patient save(@NonNull Patient patient) {
+        patient.setGender(normalizeGenderValue(patient.getGender()));
         if (repository.existsByEmailIgnoreCase(patient.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered for another patient");
         }
@@ -81,7 +96,8 @@ public class PatientService {
         }
         // Resolve location from database if only ID is provided
         if (patient.getLocation() != null && patient.getLocation().getId() != null) {
-            Location resolvedLocation = locationRepository.findById(patient.getLocation().getId())
+            Long locationId = patient.getLocation().getId();
+            Location resolvedLocation = locationRepository.findById(locationId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Location not found"));
             patient.setLocation(resolvedLocation);
         }
@@ -91,6 +107,7 @@ public class PatientService {
     @org.springframework.transaction.annotation.Transactional
     public Patient update(@NonNull Long id, @NonNull Patient updated) {
         Patient existing = getById(id);
+        existing.setGender(normalizeGenderValue(updated.getGender()));
         if (!existing.getEmail().equalsIgnoreCase(updated.getEmail())
                 && repository.existsByEmailIgnoreCase(updated.getEmail())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered for another patient");
@@ -100,12 +117,12 @@ public class PatientService {
         }
         existing.setFullName(updated.getFullName());
         existing.setAge(updated.getAge());
-        existing.setGender(updated.getGender());
         existing.setEmail(updated.getEmail());
         existing.setPhone(updated.getPhone());
         // Resolve location from database if only ID is provided
         if (updated.getLocation() != null && updated.getLocation().getId() != null) {
-            Location resolvedLocation = locationRepository.findById(updated.getLocation().getId())
+            Long locationId = updated.getLocation().getId();
+            Location resolvedLocation = locationRepository.findById(locationId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Location not found"));
             existing.setLocation(resolvedLocation);
         } else {
@@ -135,5 +152,25 @@ public class PatientService {
         }
         String trimmed = raw.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeGenderFilter(String rawGender) {
+        if (rawGender == null) return null;
+        String trimmed = rawGender.trim();
+        if (trimmed.isEmpty()) return null;
+        return normalizeGenderValue(trimmed);
+    }
+
+    private String normalizeGenderValue(String rawGender) {
+        if (rawGender == null) return null;
+        String trimmed = rawGender.trim();
+        if (trimmed.isEmpty()) return trimmed;
+        String upper = trimmed.toUpperCase();
+        return switch (upper) {
+            case "M", "MALE" -> "MALE";
+            case "F", "FEMALE" -> "FEMALE";
+            case "O", "OTHER" -> "OTHER";
+            default -> trimmed;
+        };
     }
 }

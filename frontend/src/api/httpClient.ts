@@ -1,5 +1,6 @@
 import axios from "axios";
 import { toast } from "react-toastify";
+import { tStatic } from "../i18n/tStatic";
 
 // Prefer explicit env; otherwise fall back to current origin (works for dev proxy and prod) or localhost:8899.
 const fallbackOrigin =
@@ -33,9 +34,9 @@ httpClient.interceptors.response.use(
       error?.response?.data?.message ||
       error?.response?.data ||
       error?.message ||
-      "Request failed. Please check backend availability.";
+      tStatic("errors.backendUnavailable");
     if (status === 401 || status === 403) {
-      toast.error("Session expired or unauthorized. Please sign in again.");
+      toast.error(tStatic("errors.sessionExpired"));
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");
       localStorage.removeItem("pending_user");
@@ -45,7 +46,7 @@ httpClient.interceptors.response.use(
         }
       }, 500);
     } else {
-      toast.error(typeof message === "string" ? message : "Request failed");
+      toast.error(typeof message === "string" ? message : tStatic("common.requestFailed"));
     }
     return Promise.reject(error);
   }

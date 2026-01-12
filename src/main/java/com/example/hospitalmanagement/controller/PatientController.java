@@ -53,8 +53,9 @@ public class PatientController {
 
     @GetMapping("/search")
     public ResponseEntity<Page<Patient>> search(@RequestParam @NonNull String q,
-                                                @PageableDefault(sort = "id") Pageable pageable) {
-        return ResponseEntity.ok(service.search(q, pageable));
+                                                @PageableDefault(sort = "id") Pageable pageable,
+                                                java.security.Principal principal) {
+        return ResponseEntity.ok(service.search(q, pageable, resolveDoctorId(principal)));
     }
 
     @GetMapping("/province/{name}")
@@ -72,8 +73,9 @@ public class PatientController {
                                                 @RequestParam(required = false) String email,
                                                 @RequestParam(required = false) String phone,
                                                 @RequestParam(required = false) String gender,
-                                                @PageableDefault(sort = "id") Pageable pageable) {
-        return ResponseEntity.ok(service.filter(name, email, phone, gender, pageable));
+                                                @PageableDefault(sort = "id") Pageable pageable,
+                                                java.security.Principal principal) {
+        return ResponseEntity.ok(service.filter(name, email, phone, gender, pageable, resolveDoctorId(principal)));
     }
 
     @GetMapping("/{id}")
@@ -104,5 +106,19 @@ public class PatientController {
     public ResponseEntity<Void> delete(@PathVariable @NonNull Long id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
+    }
+
+    private Long resolveDoctorId(java.security.Principal principal) {
+        if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
+            return null;
+        }
+        var user = userAccountService.findOptional(principal.getName()).orElse(null);
+        if (user == null) {
+            return null;
+        }
+        if (user.getRole() == com.example.hospitalmanagement.model.enums.Role.DOCTOR && user.getDoctor() != null) {
+            return user.getDoctor().getId();
+        }
+        return null;
     }
 }

@@ -7,5 +7,6 @@ public enum EntityType {
     PATIENT,
     DOCTOR,
     DEPARTMENT,
-    LOCATION
+    LOCATION,
+    CONSULTATION_NOTE
 }

@@ -1,0 +1,46 @@
+import httpClient from "./httpClient";
+
+export interface VoiceMessageResponse {
+    id: number;
+    senderId: number;
+    senderName: string;
+    recipientId: number;
+    recipientName: string;
+    audioContentType: string;
+    timestamp: string;
+    isRead: boolean;
+}
+
+export const voiceMessageApi = {
+    send: async (recipientId: number, audioFile: File) => {
+        const formData = new FormData();
+        formData.append("recipientId", recipientId.toString());
+        formData.append("audio", audioFile);
+        const { data } = await httpClient.post<VoiceMessageResponse>("/voice-messages", formData);
+        return data;
+    },
+    getInbox: async () => {
+        const { data } = await httpClient.get<VoiceMessageResponse[]>("/voice-messages/inbox");
+        return data;
+    },
+    getSent: async () => {
+        const { data } = await httpClient.get<VoiceMessageResponse[]>("/voice-messages/sent");
+        return data;
+    },
+    getUnreadCount: async () => {
+        const { data } = await httpClient.get<number>("/voice-messages/unread-count");
+        return data;
+    },
+    markAsRead: async (id: number) => {
+        await httpClient.put(`/voice-messages/${id}/read`);
+    },
+    getAudioUrl: (id: number) => {
+        return `${import.meta.env.VITE_API_URL || "/api"}/voice-messages/${id}/audio`;
+    },
+    getAudioBlob: async (id: number) => {
+        const response = await httpClient.get(`/voice-messages/${id}/audio`, {
+            responseType: "blob",
+        });
+        return response.data;
+    },
+};

@@ -10,7 +10,6 @@ const ForgotPasswordPage: React.FC = () => {
   const [token, setToken] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [message, setMessage] = useState("");
   const navigate = useNavigate();
 
   const handleRequestToken = async (e: React.FormEvent) => {

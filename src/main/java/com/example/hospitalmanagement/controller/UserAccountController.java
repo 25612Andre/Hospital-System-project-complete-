@@ -17,6 +17,7 @@ import com.example.hospitalmanagement.auth.service.UserAccountService;
 import com.example.hospitalmanagement.service.LocationService;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 
 @RestController
 @RequestMapping("/api/users")
@@ -33,23 +34,30 @@ public class UserAccountController {
 
     @GetMapping("/search")
     public ResponseEntity<Page<UserAccount>> search(@RequestParam @NonNull String q,
-                                                    @PageableDefault(sort = "username") Pageable pageable) {
+                                                    @NonNull @PageableDefault(sort = "username") Pageable pageable) {
         return ResponseEntity.ok(userAccountService.search(q, pageable));
     }
 
-    @PostMapping
-    public ResponseEntity<UserAccount> create(@RequestBody @Valid UserAccountRequest request) {
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<UserAccount> create(@RequestBody @Valid @NonNull UserAccountRequest request) {
         return ResponseEntity.ok(userAccountService.create(request));
     }
 
+    @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public ResponseEntity<UserAccount> createMultipart(
+            @ModelAttribute @Valid @NonNull UserAccountRequest request,
+            @RequestParam(value = "profilePicture", required = false) org.springframework.web.multipart.MultipartFile profilePicture) {
+        return ResponseEntity.ok(userAccountService.create(request, profilePicture));
+    }
+
     @PutMapping("/{id}")
-    public ResponseEntity<UserAccount> update(@PathVariable Long id,
-                                              @RequestBody @Valid UserAccountRequest request) {
+    public ResponseEntity<UserAccount> update(@PathVariable @NonNull Long id,
+                                              @RequestBody @Valid @NonNull UserAccountRequest request) {
         return ResponseEntity.ok(userAccountService.update(id, request));
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
+    public ResponseEntity<Void> delete(@PathVariable @NonNull Long id) {
         userAccountService.delete(id);
         return ResponseEntity.noContent().build();
     }
@@ -83,8 +91,21 @@ public class UserAccountController {
          return ResponseEntity.ok(userAccountService.updateProfile(username, request));
     }
 
+    @GetMapping("/profile")
+    public ResponseEntity<UserAccount> profile() {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(userAccountService.findByUsername(username));
+    }
+
+    @PutMapping(value = "/profile-picture", consumes = {"multipart/form-data"})
+    public ResponseEntity<UserAccount> updateProfilePicture(
+            @RequestParam("profilePicture") org.springframework.web.multipart.MultipartFile profilePicture) {
+        String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
+        return ResponseEntity.ok(userAccountService.updateProfilePicture(username, profilePicture));
+    }
+
     @GetMapping("/{id}/location")
-    public ResponseEntity<LocationDTO> location(@PathVariable Long id) {
+    public ResponseEntity<LocationDTO> location(@PathVariable @NonNull Long id) {
         UserAccount account = userAccountService.getById(id);
         if (account.getLocation() == null) {
             return ResponseEntity.ok(null);

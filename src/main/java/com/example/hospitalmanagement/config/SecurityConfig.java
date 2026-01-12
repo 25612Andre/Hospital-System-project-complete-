@@ -37,6 +37,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        // Serve uploaded profile pictures (JWT header is not sent by <img> tags)
+                        .requestMatchers(HttpMethod.GET, "/uploads/profiles/**").permitAll()
                         // Allow public reads of the location tree so the frontend can render without auth friction
                         .requestMatchers(HttpMethod.GET, "/api/locations/**").permitAll()
                         // Dashboard and search: any authenticated user
@@ -57,6 +59,8 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/appointments").hasAnyRole("ADMIN", "DOCTOR", "PATIENT")
                         .requestMatchers(HttpMethod.GET, "/api/appointments/**").hasAnyRole("ADMIN", "DOCTOR", "PATIENT")
                         .requestMatchers(HttpMethod.POST, "/api/appointments/**").hasAnyRole("ADMIN", "DOCTOR", "PATIENT")
+                        // Consultation notes are written by doctors/admin only
+                        .requestMatchers(HttpMethod.PUT, "/api/appointments/*/consultation-note").hasAnyRole("ADMIN", "DOCTOR")
                         .requestMatchers(HttpMethod.PUT, "/api/appointments/**").hasAnyRole("ADMIN", "DOCTOR", "PATIENT")
                         .requestMatchers(HttpMethod.DELETE, "/api/appointments/**").hasAnyRole("ADMIN", "DOCTOR", "PATIENT")
                         // Bills
@@ -75,7 +79,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/locations/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.DELETE, "/api/locations/**").hasRole("ADMIN")
                         // Users and roles
+                        .requestMatchers(HttpMethod.GET, "/api/users/search").authenticated()
                         .requestMatchers(HttpMethod.PUT, "/api/users/profile").authenticated()
+                        .requestMatchers(HttpMethod.GET, "/api/users/profile").authenticated()
+                        .requestMatchers(HttpMethod.PUT, "/api/users/profile-picture").authenticated()
                         .requestMatchers("/api/users/**").hasRole("ADMIN")
                         .requestMatchers("/api/roles/**").hasRole("ADMIN")
                         // Fallback: require authentication

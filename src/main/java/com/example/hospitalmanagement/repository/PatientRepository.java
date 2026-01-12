@@ -35,6 +35,36 @@ public interface PatientRepository extends JpaRepository<Patient, Long> {
                                  @Param("phone") String phone,
                                  @Param("gender") String gender,
                                  Pageable pageable);
+
+    @Query("""
+            select p from Patient p
+            join p.doctors d
+            where d.id = :doctorId
+              and (:name is null or lower(p.fullName) like lower(concat('%', :name, '%')))
+              and (:email is null or lower(p.email) like lower(concat('%', :email, '%')))
+              and (:phone is null or lower(p.phone) like lower(concat('%', :phone, '%')))
+              and (:gender is null or lower(p.gender) = lower(:gender))
+            """)
+    Page<Patient> filterPatientsForDoctor(@Param("doctorId") Long doctorId,
+                                          @Param("name") String name,
+                                          @Param("email") String email,
+                                          @Param("phone") String phone,
+                                          @Param("gender") String gender,
+                                          Pageable pageable);
+
+    @Query("""
+            select p from Patient p
+            join p.doctors d
+            where d.id = :doctorId
+              and (
+                lower(p.fullName) like lower(concat('%', :term, '%'))
+                or lower(p.email) like lower(concat('%', :term, '%'))
+                or lower(p.phone) like lower(concat('%', :term, '%'))
+              )
+            """)
+    Page<Patient> searchForDoctor(@Param("doctorId") Long doctorId,
+                                  @Param("term") String term,
+                                  Pageable pageable);
     
     long countByDoctors_Id(Long doctorId);
     

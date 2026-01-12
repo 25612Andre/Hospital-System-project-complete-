@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -17,13 +18,24 @@ public class FileStorageService {
     @Value("${file.upload-dir:uploads/profiles}")
     private String uploadDir;
 
+    private static final long MAX_SIZE_BYTES = 5L * 1024 * 1024;
+    private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
+            "image/jpeg",
+            "image/jpg",
+            "image/pjpeg",
+            "image/png",
+            "image/x-png",
+            "image/gif",
+            "image/webp"
+    );
+
     public String storeFile(MultipartFile file) throws IOException {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Cannot store empty file");
         }
 
         // Create upload directory if it doesn't exist
-        Path uploadPath = Paths.get(uploadDir);
+        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
         if (!Files.exists(uploadPath)) {
             Files.createDirectories(uploadPath);
         }
@@ -48,7 +60,7 @@ public class FileStorageService {
         try {
             if (fileUrl != null && fileUrl.startsWith("/uploads/profiles/")) {
                 String filename = fileUrl.substring("/uploads/profiles/".length());
-                Path filePath = Paths.get(uploadDir).resolve(filename);
+                Path filePath = Paths.get(uploadDir).toAbsolutePath().normalize().resolve(filename);
                 Files.deleteIfExists(filePath);
             }
         } catch (IOException e) {
@@ -67,13 +79,12 @@ public class FileStorageService {
             return false;
         }
 
-        // Check if it's an image
-        if (!contentType.startsWith("image/")) {
+        // Restrict to common browser-friendly image formats
+        if (!ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase())) {
             return false;
         }
 
         // Check file size (max 5MB)
-        long maxSize = 5 * 1024 * 1024; // 5MB in bytes
-        return file.getSize() <= maxSize;
+        return file.getSize() <= MAX_SIZE_BYTES;
     }
 }

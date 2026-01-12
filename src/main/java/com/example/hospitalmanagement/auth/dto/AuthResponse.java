@@ -22,5 +22,6 @@ public class AuthResponse {
         private Role role;
         private Long patientId;
         private Long doctorId;
+        private String profilePictureUrl;
     }
 }

@@ -7,7 +7,6 @@ import com.example.hospitalmanagement.repository.AppointmentRepository;
 import com.example.hospitalmanagement.repository.BillingRepository;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -30,7 +29,7 @@ public class BillingService {
         return billingRepository.findAll();
     }
 
-    public Page<Bill> getPage(Pageable pageable, Long patientId, Long doctorId) {
+    public Page<Bill> getPage(@NonNull Pageable pageable, Long patientId, Long doctorId) {
         if (patientId != null) {
             return billingRepository.findByAppointment_Patient_Id(patientId, pageable);
         }
@@ -40,7 +39,7 @@ public class BillingService {
         return billingRepository.findAll(pageable);
     }
 
-    public Page<Bill> search(@NonNull String term, Pageable pageable, Long patientId) {
+    public Page<Bill> search(@NonNull String term, @NonNull Pageable pageable, Long patientId) {
         if (patientId != null) {
             return billingRepository.searchByTermAndPatient(term, patientId, pageable);
         }
@@ -67,15 +66,12 @@ public class BillingService {
         // Get the consultation fee or default to 0
         Double amount = Optional.ofNullable(appointment.getConsultationFee()).orElse(0.0);
 
-        // Build and save the bill
-        Bill bill = Bill.builder()
-                .appointment(appointment)
-                .amount(amount)
-                .status("Pending")
-                .issuedDate(LocalDateTime.now())
-                .build();
-
-        return Objects.requireNonNull(billingRepository.save(bill));
+        Bill bill = new Bill();
+        bill.setAppointment(appointment);
+        bill.setAmount(amount);
+        bill.setStatus("Pending");
+        bill.setIssuedDate(LocalDateTime.now());
+        return billingRepository.save(bill);
     }
 
     @Transactional

@@ -20,11 +20,24 @@ public interface UserAccountRepository extends JpaRepository<UserAccount, Long> 
         return findByUsernameIgnoreCase(username);
     }
 
-    Page<UserAccount> findByUsernameContainingIgnoreCaseOrPatient_FullNameContainingIgnoreCase(
-            String username, String fullName, Pageable pageable);
+    @Query("SELECT DISTINCT u FROM UserAccount u LEFT JOIN u.patient p LEFT JOIN u.doctor d WHERE " +
+           "LOWER(u.username) LIKE LOWER(CONCAT('%', :term, '%')) OR " +
+           "COALESCE(LOWER(p.fullName), '') LIKE LOWER(CONCAT('%', :term, '%')) OR " +
+           "COALESCE(LOWER(p.email), '') LIKE LOWER(CONCAT('%', :term, '%')) OR " +
+           "COALESCE(LOWER(p.phone), '') LIKE LOWER(CONCAT('%', :term, '%')) OR " +
+           "COALESCE(LOWER(d.name), '') LIKE LOWER(CONCAT('%', :term, '%')) OR " +
+           "COALESCE(LOWER(d.contact), '') LIKE LOWER(CONCAT('%', :term, '%'))")
+    Page<UserAccount> searchFull(@Param("term") String term, Pageable pageable);
 
-    Page<UserAccount> findByUsernameContainingIgnoreCaseOrPatient_FullNameContainingIgnoreCaseOrRole(
-            String username, String fullName, Role role, Pageable pageable);
+    @Query("SELECT DISTINCT u FROM UserAccount u LEFT JOIN u.patient p LEFT JOIN u.doctor d WHERE " +
+           "(LOWER(u.username) LIKE LOWER(CONCAT('%', :term, '%')) OR " +
+           "COALESCE(LOWER(p.fullName), '') LIKE LOWER(CONCAT('%', :term, '%')) OR " +
+           "COALESCE(LOWER(p.email), '') LIKE LOWER(CONCAT('%', :term, '%')) OR " +
+           "COALESCE(LOWER(p.phone), '') LIKE LOWER(CONCAT('%', :term, '%')) OR " +
+           "COALESCE(LOWER(d.name), '') LIKE LOWER(CONCAT('%', :term, '%')) OR " +
+           "COALESCE(LOWER(d.contact), '') LIKE LOWER(CONCAT('%', :term, '%'))) AND " +
+           "u.role = :role")
+    Page<UserAccount> searchFullWithRole(@Param("term") String term, @Param("role") Role role, Pageable pageable);
 
     List<UserAccount> findByLocation_IdIn(List<Long> locationIds);
 

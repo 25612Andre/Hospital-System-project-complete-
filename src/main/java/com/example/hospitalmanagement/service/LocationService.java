@@ -18,6 +18,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * Location service following pharmacy-management pattern.
@@ -29,6 +31,8 @@ import java.util.Optional;
 public class LocationService {
 
     private final LocationRepository repository;
+
+    private final ConcurrentMap<Long, String> pathCache = new ConcurrentHashMap<>();
 
     // ==================== CRUD Operations ====================
 
@@ -44,6 +48,7 @@ public class LocationService {
                 .build());
 
         Location saved = repository.save(location);
+        clearPathCache();
         return toDto(saved);
     }
 
@@ -65,13 +70,16 @@ public class LocationService {
         location.setType(request.getType());
         location.setParent(parent);
 
-        return toDto(repository.save(location));
+        Location saved = repository.save(location);
+        clearPathCache();
+        return toDto(saved);
     }
 
     public void delete(@NonNull Long id) {
         Location location = Objects.requireNonNull(repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Location not found with ID: " + id)));
         repository.delete(location);
+        clearPathCache();
     }
 
     // ==================== Specification-based Filtering ====================
@@ -160,7 +168,7 @@ public class LocationService {
     }
 
     @Transactional(readOnly = true)
-    public Page<LocationDTO> getPage(Pageable pageable) {
+    public Page<LocationDTO> getPage(@NonNull Pageable pageable) {
         return repository.findAll(pageable).map(this::toDto);
     }
 
@@ -170,7 +178,7 @@ public class LocationService {
      * Get a Location entity by ID (not DTO).
      */
     @Transactional(readOnly = true)
-    public Location getLocationById(@NonNull Long id) {
+    public @NonNull Location getLocationById(@NonNull Long id) {
         return repository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Location not found with ID: " + id));
     }
@@ -179,7 +187,7 @@ public class LocationService {
      * Find location by type and code, or throw exception.
      */
     @Transactional(readOnly = true)
-    public Location requireByTypeAndCode(@NonNull LocationType type, @NonNull String code) {
+    public @NonNull Location requireByTypeAndCode(@NonNull LocationType type, @NonNull String code) {
         return repository.findByTypeAndCodeIgnoreCase(type, code)
                 .orElseThrow(() -> new RuntimeException(type + " with code " + code + " not found"));
     }
@@ -188,7 +196,7 @@ public class LocationService {
      * Find location by type and name, or throw exception.
      */
     @Transactional(readOnly = true)
-    public Location requireByTypeAndName(@NonNull LocationType type, @NonNull String name) {
+    public @NonNull Location requireByTypeAndName(@NonNull LocationType type, @NonNull String name) {
         return repository.findByTypeAndNameIgnoreCase(type, name)
                 .orElseThrow(() -> new RuntimeException(type + " " + name + " not found"));
     }
@@ -237,13 +245,26 @@ public class LocationService {
      * Build the full path for a location (e.g., "Kigali > Gasabo > Kimironko").
      */
     public String buildPath(Location loc) {
-        List<String> parts = new ArrayList<>();
-        Location cursor = loc;
-        while (cursor != null) {
-            parts.add(0, cursor.getName());
-            cursor = cursor.getParent();
+        if (loc == null) {
+            return null;
         }
-        return String.join(" > ", parts);
+        Long id = loc.getId();
+        if (id == null) {
+            return loc.getName();
+        }
+        return pathCache.computeIfAbsent(id, this::computePathById);
+    }
+
+    public void clearPathCache() {
+        pathCache.clear();
+    }
+
+    private String computePathById(Long id) {
+        List<String> names = repository.findPathNames(id);
+        if (names == null || names.isEmpty()) {
+            return "";
+        }
+        return String.join(" > ", names);
     }
 
     private void validate(LocationRequest request, boolean creating) {

@@ -39,7 +39,7 @@ public class AppointmentController {
     }
 
     @GetMapping("/page")
-    public ResponseEntity<Page<Appointment>> getPage(@PageableDefault(sort = "id") Pageable pageable,
+    public ResponseEntity<Page<Appointment>> getPage(@NonNull @PageableDefault(sort = "id") Pageable pageable,
                                                      java.security.Principal principal) {
         Long patientId = null;
         Long doctorId = null;
@@ -74,7 +74,7 @@ public class AppointmentController {
 
     @GetMapping("/search")
     public ResponseEntity<Page<Appointment>> search(@RequestParam @NonNull String q,
-                                                    @PageableDefault(sort = "appointmentDate") Pageable pageable) {
+                                                    @NonNull @PageableDefault(sort = "appointmentDate") Pageable pageable) {
         return ResponseEntity.ok(service.search(q, pageable));
     }
 
@@ -124,7 +124,7 @@ public class AppointmentController {
         return ResponseEntity.noContent().build();
     }
 
-    private void verifyOwnership(Long appointmentId, java.security.Principal principal) {
+    private void verifyOwnership(@NonNull Long appointmentId, java.security.Principal principal) {
         if (principal == null) return;
         var user = userAccountService.findOptional(principal.getName()).orElse(null);
         if (user != null && user.getRole() == com.example.hospitalmanagement.model.enums.Role.PATIENT) {

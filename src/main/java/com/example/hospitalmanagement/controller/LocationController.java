@@ -39,18 +39,18 @@ public class LocationController {
     }
 
     @GetMapping("/{id}")
-    public LocationDTO get(@PathVariable Long id) {
+    public LocationDTO get(@PathVariable @NonNull Long id) {
         return locationService.get(id);
     }
 
     @PutMapping("/{id}")
-    public LocationDTO update(@PathVariable Long id, @Valid @RequestBody LocationRequest request) {
+    public LocationDTO update(@PathVariable @NonNull Long id, @Valid @RequestBody LocationRequest request) {
         return locationService.update(id, request);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
+    public void delete(@PathVariable @NonNull Long id) {
         locationService.delete(id);
     }
 
@@ -79,17 +79,17 @@ public class LocationController {
     }
 
     @GetMapping("/type/{type}")
-    public ResponseEntity<List<LocationDTO>> byType(@PathVariable LocationType type) {
+    public ResponseEntity<List<LocationDTO>> byType(@PathVariable @NonNull LocationType type) {
         return ResponseEntity.ok(locationService.getByType(type));
     }
 
     @GetMapping("/parent/{id}")
-    public ResponseEntity<List<LocationDTO>> children(@PathVariable Long id) {
+    public ResponseEntity<List<LocationDTO>> children(@PathVariable @NonNull Long id) {
         return ResponseEntity.ok(locationService.getChildren(id));
     }
 
     @GetMapping("/page")
-    public ResponseEntity<Page<LocationDTO>> page(@PageableDefault(sort = "name") Pageable pageable) {
+    public ResponseEntity<Page<LocationDTO>> page(@NonNull @PageableDefault(sort = "name") Pageable pageable) {
         return ResponseEntity.ok(locationService.getPage(pageable));
     }
 
@@ -128,4 +128,3 @@ public class LocationController {
                 .build());
     }
 }
-

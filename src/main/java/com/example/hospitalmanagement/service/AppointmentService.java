@@ -44,11 +44,11 @@ public class AppointmentService {
         return appointmentRepository.findAll();
     }
 
-    public Page<Appointment> getPage(Pageable pageable) {
+    public Page<Appointment> getPage(@NonNull Pageable pageable) {
         return appointmentRepository.findAll(pageable);
     }
 
-    public Page<Appointment> getPage(Pageable pageable, Long patientId, Long doctorId) {
+    public Page<Appointment> getPage(@NonNull Pageable pageable, Long patientId, Long doctorId) {
         if (patientId != null) {
             return appointmentRepository.findByPatient_Id(patientId, pageable);
         }
@@ -58,7 +58,7 @@ public class AppointmentService {
         return appointmentRepository.findAll(pageable);
     }
 
-    public Page<Appointment> search(@NonNull String term, Pageable pageable) {
+    public Page<Appointment> search(@NonNull String term, @NonNull Pageable pageable) {
         return appointmentRepository.findByDoctor_NameContainingIgnoreCaseOrPatient_FullNameContainingIgnoreCase(
                 term, term, pageable);
     }
@@ -69,12 +69,21 @@ public class AppointmentService {
     }
 
     @Transactional
-    public Appointment create(@NonNull Long doctorId,
-                              @NonNull Long patientId,
-                              @NonNull LocalDateTime appointmentDate,
+    public Appointment create(Long doctorId,
+                              Long patientId,
+                              LocalDateTime appointmentDate,
                               String status,
                               Double consultationFee,
                               String notes) {
+        if (doctorId == null) {
+            throw new IllegalArgumentException("Doctor is required");
+        }
+        if (patientId == null) {
+            throw new IllegalArgumentException("Patient is required");
+        }
+        if (appointmentDate == null) {
+            throw new IllegalArgumentException("Appointment date is required");
+        }
         Doctor doctor = doctorRepository.findById(doctorId)
                 .orElseThrow(() -> new RuntimeException("Doctor not found"));
         Patient patient = patientRepository.findById(patientId)
