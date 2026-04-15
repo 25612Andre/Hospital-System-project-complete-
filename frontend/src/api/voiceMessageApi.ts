@@ -11,6 +11,14 @@ export interface VoiceMessageResponse {
     isRead: boolean;
 }
 
+const fallbackOrigin =
+    typeof window !== "undefined" && window.location?.origin
+        ? window.location.origin
+        : "http://localhost:8899";
+
+const rawBase = import.meta.env.VITE_API_BASE_URL || fallbackOrigin;
+const apiBase = rawBase.endsWith("/api") ? rawBase : `${rawBase.replace(/\/$/, "")}/api`;
+
 export const voiceMessageApi = {
     send: async (recipientId: number, audioFile: File) => {
         const formData = new FormData();
@@ -35,7 +43,7 @@ export const voiceMessageApi = {
         await httpClient.put(`/voice-messages/${id}/read`);
     },
     getAudioUrl: (id: number) => {
-        return `${import.meta.env.VITE_API_URL || "/api"}/voice-messages/${id}/audio`;
+        return `${apiBase}/voice-messages/${id}/audio`;
     },
     getAudioBlob: async (id: number) => {
         const response = await httpClient.get(`/voice-messages/${id}/audio`, {

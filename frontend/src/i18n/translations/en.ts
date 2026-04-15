@@ -301,6 +301,7 @@ const en = {
   "bills.invoice.authorizedSignature": "Authorized Signature",
   "bills.invoice.financialDirector": "Financial Director",
   "bills.invoice.footerNote": "This is a computer-generated invoice and does not require a physical signature.",
+  "bills.invoice.contact": "For inquiries, contact our billing department at billing@hospitalnze.rw",
   "appointments.title": "Appointments",
   "appointments.subtitle": "Paginated list with scheduling actions and quick completion.",
   "appointments.searchPlaceholder": "Search by doctor or patient...",
