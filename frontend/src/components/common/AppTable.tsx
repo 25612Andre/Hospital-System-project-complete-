@@ -29,40 +29,42 @@ function AppTable<T extends { id?: number | string }>({
 
   return (
     <div className="border border-slate-200 rounded-xl shadow-md bg-white overflow-hidden">
-      <table className="w-full border-collapse">
-        <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500 uppercase tracking-widest border-b border-slate-200">
-          <tr>
-            {columns.map((col) => (
-              <th key={col.key as string} className="px-6 py-4">
-                {col.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-slate-100 text-sm">
-          {data.map((row, idx) => (
-            <tr
-              key={String(row.id ?? idx)}
-              className="bg-white hover:bg-slate-50 transition-colors duration-150"
-            >
+      <div className="overflow-x-auto w-full">
+        <table className="w-full border-collapse min-w-max">
+          <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500 uppercase tracking-widest border-b border-slate-200">
+            <tr>
               {columns.map((col) => (
-                <td key={col.key as string} className="px-4 py-3 text-slate-800">
-                  {col.render
-                    ? col.render(row)
-                    : String((row as Record<string, unknown>)[col.key as string] ?? "")}
-                </td>
+                <th key={col.key as string} className="px-6 py-4">
+                  {col.header}
+                </th>
               ))}
             </tr>
-          ))}
-          {data.length === 0 && (
-            <tr>
-              <td className="px-4 py-6 text-center text-slate-500" colSpan={columns.length}>
-                {t("common.noDataFound")}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+          <tbody className="divide-y divide-slate-100 text-sm">
+            {data.map((row, idx) => (
+              <tr
+                key={String(row.id ?? idx)}
+                className="bg-white hover:bg-slate-50 transition-colors duration-150"
+              >
+                {columns.map((col) => (
+                  <td key={col.key as string} className="px-4 py-3 text-slate-800">
+                    {col.render
+                      ? col.render(row)
+                      : String((row as Record<string, unknown>)[col.key as string] ?? "")}
+                  </td>
+                ))}
+              </tr>
+            ))}
+            {data.length === 0 && (
+              <tr>
+                <td className="px-4 py-6 text-center text-slate-500" colSpan={columns.length}>
+                  {t("common.noDataFound")}
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
       {total !== undefined && size && page !== undefined && onPageChange && (
         <div className="p-4 bg-white border-t border-slate-100">
           <Pagination

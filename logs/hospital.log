@@ -7500,3 +7500,8 @@ Caused by: org.postgresql.util.PSQLException: FATAL: password authentication fai
             on p2_0.id=l1_0.parent_id 
     where
         p1_0.id=?
+2026-04-17T03:18:05.553+02:00  INFO 36528 --- [HospitalManagementSystem] [SpringApplicationShutdownHook] o.s.b.w.e.tomcat.GracefulShutdown        : Commencing graceful shutdown. Waiting for active requests to complete
+2026-04-17T03:18:05.571+02:00  INFO 36528 --- [HospitalManagementSystem] [tomcat-shutdown] o.s.b.w.e.tomcat.GracefulShutdown        : Graceful shutdown complete
+2026-04-17T03:18:05.584+02:00  INFO 36528 --- [HospitalManagementSystem] [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2026-04-17T03:18:05.600+02:00  INFO 36528 --- [HospitalManagementSystem] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2026-04-17T03:18:05.607+02:00  INFO 36528 --- [HospitalManagementSystem] [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
