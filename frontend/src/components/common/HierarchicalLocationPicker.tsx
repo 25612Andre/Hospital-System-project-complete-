@@ -22,16 +22,45 @@ export default function HierarchicalLocationPicker({ value, onChange, label, req
     const [options, setOptions] = useState<LocationNode[][]>([[], [], [], [], []]);
     const [loading, setLoading] = useState<boolean[]>([false, false, false, false, false]);
 
-    // Load provinces on mount
-    useEffect(() => {
-        loadLevel(0, null);
-    }, []);
-
-    // When value changes externally, we should try to trace back the hierarchy
-    // For now, we reset if value is null
     useEffect(() => {
         if (!value) {
             setSelections([null, null, null, null, null]);
+            loadLevel(0, null).catch(console.error);
+        } else if (value && !selections.includes(value)) {
+            const loadPath = async () => {
+                try {
+                    let currentId = value;
+                    const chain: number[] = [];
+                    while (currentId) {
+                        chain.unshift(currentId);
+                        const loc = await locationApi.getById(currentId);
+                        if (!loc.parentId) break;
+                        currentId = loc.parentId;
+                    }
+
+                    const newSelections = [null, null, null, null, null] as (number | null)[];
+                    const newOptions = [[], [], [], [], []] as LocationNode[][];
+
+                    for (let i = 0; i < chain.length; i++) {
+                        newSelections[i] = chain[i];
+                        if (i === 0) {
+                            newOptions[0] = await locationApi.byType('PROVINCE');
+                        } else {
+                            newOptions[i] = await locationApi.children(chain[i-1]);
+                        }
+                    }
+
+                    if (chain.length < 5) {
+                        newOptions[chain.length] = await locationApi.children(chain[chain.length - 1]);
+                    }
+
+                    setSelections(newSelections);
+                    setOptions(newOptions);
+                } catch (err) {
+                    console.error("Failed to load location path", err);
+                }
+            };
+            loadPath();
         }
     }, [value]);
 
@@ -101,8 +130,29 @@ export default function HierarchicalLocationPicker({ value, onChange, label, req
         }
 
         // Report the deepest selection as the value
-        const deepestSelection = id;
-        onChange(deepestSelection, selectedLocation);
+        let deepestSelection = null;
+        for (let i = 4; i >= 0; i--) {
+            if (newSelections[i]) {
+                deepestSelection = newSelections[i];
+                break;
+            }
+        }
+        
+        let loc = null;
+        if (deepestSelection) {
+            // Find the location node from options, need to iterate because it could be in a lower level
+            for (let i = 4; i >= 0; i--) {
+                if (newSelections[i] === deepestSelection) {
+                    loc = options[i]?.find(o => o.id === deepestSelection) || null;
+                    if (!loc && i === levelIndex && selectedLocation) {
+                         loc = selectedLocation;
+                    }
+                    break;
+                }
+            }
+        }
+
+        onChange(deepestSelection, loc);
     };
 
     // Find the deepest selected level for display

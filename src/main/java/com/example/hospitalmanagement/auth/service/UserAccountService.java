@@ -2,6 +2,7 @@ package com.example.hospitalmanagement.auth.service;
 
 import com.example.hospitalmanagement.auth.dto.AuthRequest;
 import com.example.hospitalmanagement.auth.dto.AuthResponse;
+import com.example.hospitalmanagement.dto.ProfileUpdateRequest;
 import com.example.hospitalmanagement.dto.UserAccountRequest;
 import com.example.hospitalmanagement.model.Doctor;
 import com.example.hospitalmanagement.model.Location;
@@ -225,39 +226,44 @@ public class UserAccountService {
         }
     }
 
-    public UserAccount updateProfile(String username, UserAccountRequest req) {
+    public UserAccount updateProfile(String username, ProfileUpdateRequest req) {
         UserAccount ua = findByUsername(username);
         
         // Allow password update
-        if (req.getPassword() != null && !req.getPassword().isBlank()) {
+        if (hasText(req.getPassword())) {
             ua.setPassword(passwordEncoder.encode(req.getPassword()));
         }
         
         // Allow updating linked entities
         Patient patient = ua.getPatient();
         if (patient != null) {
-            if (req.getFullName() != null) patient.setFullName(req.getFullName());
-            if (req.getPhone() != null) {
-                if (!req.getPhone().equals(patient.getPhone()) && patientRepository.existsByPhone(req.getPhone())) {
+            if (hasText(req.getFullName())) patient.setFullName(req.getFullName().trim());
+            if (hasText(req.getPhone())) {
+                String normalizedPhone = req.getPhone().trim();
+                if (!normalizedPhone.equals(patient.getPhone()) && patientRepository.existsByPhone(normalizedPhone)) {
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone already registered for another patient");
                 }
-                patient.setPhone(req.getPhone());
+                patient.setPhone(normalizedPhone);
             }
-            if (req.getGender() != null) patient.setGender(req.getGender());
-            if (req.getAge() != null) patient.setAge(req.getAge());
+            if (hasText(req.getGender())) patient.setGender(req.getGender().trim());
+            if (req.getAge() != null && req.getAge() > 0) patient.setAge(req.getAge());
             // Email kept manually or same as username?
             patientRepository.save(patient);
         }
         
         Doctor doctor = ua.getDoctor();
         if (doctor != null) {
-            if (req.getFullName() != null) doctor.setName(req.getFullName());
-            if (req.getPhone() != null) doctor.setContact(req.getPhone());
-            if (req.getSpecialization() != null) doctor.setSpecialization(req.getSpecialization());
+            if (hasText(req.getFullName())) doctor.setName(req.getFullName().trim());
+            if (hasText(req.getPhone())) doctor.setContact(req.getPhone().trim());
+            if (hasText(req.getSpecialization())) doctor.setSpecialization(req.getSpecialization().trim());
             doctorService.update(doctor.getId(), doctor);
         }
 
         return userAccountRepository.save(ua);
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     @org.springframework.transaction.annotation.Transactional

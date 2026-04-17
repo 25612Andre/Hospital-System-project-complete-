@@ -30,7 +30,7 @@ public class LocationImportService {
     private final JdbcTemplate jdbcTemplate;
     private final LocationService locationService;
 
-    @Value("classpath:data/location/locations.json")
+    @Value("file:target/classes/data/location/locations.json")
     private Resource locationsJson;
 
     @Transactional

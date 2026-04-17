@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.example.hospitalmanagement.dto.UserAccountRequest;
 import com.example.hospitalmanagement.dto.LocationDTO;
+import com.example.hospitalmanagement.dto.ProfileUpdateRequest;
 import com.example.hospitalmanagement.model.UserAccount;
 import com.example.hospitalmanagement.auth.service.UserAccountService;
 import com.example.hospitalmanagement.service.LocationService;
@@ -85,7 +86,7 @@ public class UserAccountController {
     }
 
     @PutMapping("/profile")
-    public ResponseEntity<UserAccount> updateProfile(@RequestBody @Valid UserAccountRequest request) {
+    public ResponseEntity<UserAccount> updateProfile(@RequestBody ProfileUpdateRequest request) {
          // Get current user from SecurityContext
          String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
          return ResponseEntity.ok(userAccountService.updateProfile(username, request));

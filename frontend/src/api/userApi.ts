@@ -13,7 +13,8 @@ export interface UserAccount {
 }
 
 export type UserProfileUpdatePayload = {
-    username?: string; // usually ignored for profile update logic unless admin
+    username?: string;
+    role?: string;
     password?: string;
     fullName?: string;
     phone?: string;
@@ -33,7 +34,11 @@ export const userApi = {
         if (profilePicture) {
             formData.append("profilePicture", profilePicture);
         }
-        const response = await httpClient.post<UserAccount>("/users", formData);
+        const response = await httpClient.post<UserAccount>("/users", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data"
+            }
+        });
         return response.data;
     },
 
@@ -55,7 +60,11 @@ export const userApi = {
     updateProfilePicture: async (profilePicture: File) => {
         const formData = new FormData();
         formData.append("profilePicture", profilePicture);
-        const { data } = await httpClient.put<UserAccount>("/users/profile-picture", formData);
+        const { data } = await httpClient.put<UserAccount>("/users/profile-picture", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data"
+            }
+        });
         return data;
     },
 };

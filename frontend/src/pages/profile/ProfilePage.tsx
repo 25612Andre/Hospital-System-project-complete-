@@ -121,18 +121,23 @@ const ProfilePage: React.FC = () => {
         e.preventDefault();
         try {
             const payload: any = {
-                username: user?.username, // Required for DTO validation
-                role: user?.role,         // Required for DTO validation
-                password: formData.password || undefined, // Only send if not empty
-                fullName: formData.fullName,
-                phone: formData.phone
+                username: user?.username,
+                role: user?.role,
             };
 
+            if (formData.password.trim()) {
+                payload.password = formData.password.trim();
+            }
+
             if (user?.role === 'PATIENT') {
-                payload.age = Number(formData.age);
-                payload.gender = formData.gender;
+                if (formData.fullName.trim()) payload.fullName = formData.fullName.trim();
+                if (formData.phone.trim()) payload.phone = formData.phone.trim();
+                if (formData.gender) payload.gender = formData.gender;
+                if (formData.age.trim()) payload.age = Number(formData.age);
             } else if (user?.role === 'DOCTOR') {
-                payload.specialization = formData.specialization;
+                if (formData.fullName.trim()) payload.fullName = formData.fullName.trim();
+                if (formData.phone.trim()) payload.phone = formData.phone.trim();
+                if (formData.specialization.trim()) payload.specialization = formData.specialization.trim();
             }
 
             await userApi.updateProfile(payload);
@@ -154,7 +159,9 @@ const ProfilePage: React.FC = () => {
             queryClient.invalidateQueries({ queryKey: ["my-user-profile"] });
         } catch (err: any) {
             const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || t("profile.toast.updateFailed");
-            toast.error(msg);
+            if (!err?.response) {
+                toast.error(msg);
+            }
         }
     };
 
@@ -175,7 +182,7 @@ const ProfilePage: React.FC = () => {
 
     return (
         <div className="max-w-2xl mx-auto space-y-6">
-            <div className="flex items-center justify-between">
+            <div className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 pb-2 pt-4 flex items-center justify-between mb-4">
                 <h1 className="text-2xl font-bold text-slate-800">{t("nav.profile")}</h1>
                 <div className="flex gap-2">
                     {!isEditing && <AppButton onClick={() => setIsEditing(true)}>{t("profile.editProfile")}</AppButton>}

@@ -24,7 +24,11 @@ export const voiceMessageApi = {
         const formData = new FormData();
         formData.append("recipientId", recipientId.toString());
         formData.append("audio", audioFile);
-        const { data } = await httpClient.post<VoiceMessageResponse>("/voice-messages", formData);
+        const { data } = await httpClient.post<VoiceMessageResponse>("/voice-messages", formData, {
+            headers: {
+                "Content-Type": "multipart/form-data"
+            }
+        });
         return data;
     },
     getInbox: async () => {

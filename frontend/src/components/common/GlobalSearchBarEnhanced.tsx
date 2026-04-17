@@ -149,8 +149,8 @@ const GlobalSearchBarEnhanced: React.FC = () => {
     };
 
     return (
-        <div className="relative z-[9999]" ref={dropdownRef}>
-            <div className="flex items-center gap-2 bg-white rounded-lg border border-slate-300 px-3 py-2 shadow-sm hover:border-primary-400 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-200 transition-all">
+        <div className="relative z-[9999] w-full" ref={dropdownRef}>
+            <div className="w-full flex items-center gap-2 bg-white rounded-lg border border-slate-300 px-3 py-2 shadow-sm hover:border-primary-400 focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-200 transition-all">
                 <svg
                     className="w-5 h-5 text-slate-400"
                     fill="none"
@@ -171,7 +171,7 @@ const GlobalSearchBarEnhanced: React.FC = () => {
                     onChange={(e) => setTerm(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder={t("search.placeholder")}
-                    className="flex-1 outline-none bg-transparent text-sm placeholder-slate-400 min-w-[200px]"
+                    className="flex-1 w-full min-w-0 outline-none bg-transparent text-sm placeholder-slate-400 sm:min-w-[200px]"
                 />
                 {isLoading && (
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-500 border-t-transparent"></div>
