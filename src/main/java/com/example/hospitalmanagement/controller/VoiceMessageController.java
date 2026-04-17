@@ -62,8 +62,8 @@ public class VoiceMessageController {
     public ResponseEntity<byte[]> getAudio(@PathVariable Long id, Principal principal) {
         UserAccount user = requireActor(principal);
         var message = voiceMessageService.getVoiceMessage(id, user);
-        byte[] audio = voiceMessageService.getAudioContent(message.getAudioFilename());
-        
+        byte[] audio = voiceMessageService.getAudioContent(message);
+
         MediaType mediaType;
         try {
             mediaType = MediaType.parseMediaType(message.getAudioContentType());

@@ -35,4 +35,13 @@ public class VoiceMessage {
 
     @Builder.Default
     private boolean isRead = false;
+
+    /**
+     * Stores audio binary directly in the database.
+     * This is more reliable on cloud platforms (Render, Railway, etc.)
+     * where the filesystem is ephemeral.
+     */
+    @Lob
+    @Column(name = "audio_data", columnDefinition = "BYTEA")
+    private byte[] audioData;
 }
