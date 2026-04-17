@@ -133,10 +133,42 @@ export default function LocationTreePage() {
         color: 'white',
         boxShadow: '0 10px 40px rgba(0,0,0,0.2)'
       }}>
-        <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 700 }}>📍 Locations</h1>
-        <p style={{ margin: '0.5rem 0 0', opacity: 0.8, fontSize: '0.95rem' }}>
-          Browse: Province → District → Sector → Cell → Village
-        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 700 }}>📍 Locations</h1>
+            <p style={{ margin: '0.5rem 0 0', opacity: 0.8, fontSize: '0.95rem' }}>
+              Browse: Province → District → Sector → Cell → Village
+            </p>
+          </div>
+          <button
+            onClick={async () => {
+              if (!window.confirm("Are you sure? This will wipe existing locations and re-import from the internal JSON file.")) return;
+              setLoading(true);
+              try {
+                const res = await locationApi.clearAndImport();
+                toast.success(`Successfully imported ${res.processedRows} locations!`);
+                loadLocations();
+                loadCounts();
+              } catch (err) {
+                toast.error('Failed to import locations');
+              } finally {
+                setLoading(false);
+              }
+            }}
+            style={{
+              background: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              padding: '0.75rem 1.25rem',
+              borderRadius: '8px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+            }}
+          >
+            Import Data
+          </button>
+        </div>
 
         {/* Stats Cards */}
         <div style={{

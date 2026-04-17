@@ -21,6 +21,19 @@ const emptyForm = {
   consultationFee: "",
 };
 
+const emptyQuestionnaire = {
+  bloodType: "",
+  contagiousDisease: "",
+  allergies: "",
+  chronicIllnesses: "",
+  medications: "",
+  surgeries: "",
+  smoking: "No",
+  alcohol: "No",
+  familyHistory: "",
+  reason: "",
+};
+
 const AppointmentListPage: React.FC = () => {
   const [page, setPage] = useState(0);
   const [size] = useState(10);
@@ -29,9 +42,12 @@ const AppointmentListPage: React.FC = () => {
   const [form, setForm] = useState<typeof emptyForm>(emptyForm);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [consultationAppointment, setConsultationAppointment] = useState<Appointment | null>(null);
+  const [questionnaire, setQuestionnaire] = useState(emptyQuestionnaire);
+  const [showVideoModal, setShowVideoModal] = useState(false);
+  const [assignedVideo, setAssignedVideo] = useState("");
   const queryClient = useQueryClient();
   const { roles, user } = useAuth();
-  const { t } = useI18n();
+  const { language, t } = useI18n();
 
   const isDoctor = roles.includes("DOCTOR");
   const isPatient = roles.includes("PATIENT");
@@ -86,6 +102,7 @@ const AppointmentListPage: React.FC = () => {
 
   const resetForm = () => {
     setForm(emptyForm);
+    setQuestionnaire(emptyQuestionnaire);
     setFormOpen(false);
     setEditingId(null);
   };
@@ -114,12 +131,28 @@ const AppointmentListPage: React.FC = () => {
     // Patients always create "Requested" appointments
     const statusToSubmit = isPatient ? "Requested" : form.status;
 
+    let mergedNotes = "";
+    if (isPatient && !editingId) {
+      mergedNotes = `--- Pre-Appointment Questionnaire ---\n` +
+        `Blood Type: ${questionnaire.bloodType}\n` +
+        `Contagious Diseases: ${questionnaire.contagiousDisease}\n` +
+        `Allergies: ${questionnaire.allergies}\n` +
+        `Chronic Illnesses: ${questionnaire.chronicIllnesses}\n` +
+        `Current Medications: ${questionnaire.medications}\n` +
+        `Surgeries: ${questionnaire.surgeries}\n` +
+        `Smoking: ${questionnaire.smoking}\n` +
+        `Alcohol: ${questionnaire.alcohol}\n` +
+        `Family History: ${questionnaire.familyHistory}\n` +
+        `Reason for specifically choosing this doctor: ${questionnaire.reason}\n`;
+    }
+
     const payload: AppointmentPayload = {
       doctorId: Number(form.doctorId),
       patientId: Number(form.patientId),
       appointmentDate: dateStr,
       status: statusToSubmit,
       consultationFee: form.consultationFee ? Number(form.consultationFee) : undefined,
+      notes: mergedNotes || undefined,
     };
     try {
       if (editingId) {
@@ -128,6 +161,32 @@ const AppointmentListPage: React.FC = () => {
       } else {
         await appointmentApi.create(payload);
         toast.success(isPatient ? t("appointments.toast.requested") : t("appointments.toast.created"));
+        
+        if (isPatient) {
+          const doctor = doctorOptions.find(d => String(d.id) === String(form.doctorId));
+          const spec = (doctor?.specialization || doctor?.department?.name || "").toLowerCase();
+          
+          let videoUrl = language === 'fr' 
+            ? "https://www.youtube.com/embed/Ol2tj61J2J0" // Default FR (General Medecine)
+            : "https://www.youtube.com/embed/sEmnc_CmPR4"; // Default EN
+            
+          if (spec.includes("cardiolo")) {
+            videoUrl = language === 'fr' 
+              ? "https://www.youtube.com/embed/JMYNkjhxy_I" 
+              : "https://www.youtube.com/embed/w2O5_klsuXc"; // Cardio
+          } else if (spec.includes("pediatr") || spec.includes("pédiatr")) {
+            videoUrl = language === 'fr' 
+              ? "https://www.youtube.com/embed/st9qu2RyJLM" 
+              : "https://www.youtube.com/embed/ZKKNQ_lA1HQ"; // Ped
+          } else if (spec.includes("neuro")) {
+            videoUrl = language === 'fr' 
+              ? "https://www.youtube.com/embed/jH2ZvKq_9Gk" 
+              : "https://www.youtube.com/embed/HQk-0yALVBA"; // Neuro
+          }
+
+          setAssignedVideo(videoUrl);
+          setShowVideoModal(true);
+        }
       }
       resetForm();
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
@@ -313,6 +372,74 @@ const AppointmentListPage: React.FC = () => {
               readOnly
             />
           </div>
+
+          {isPatient && !editingId && (
+            <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 pt-4 border-t border-slate-200">
+              <h3 className="md:col-span-2 font-semibold text-slate-800 text-lg mb-2">
+                {language === 'fr' ? "Questionnaire pré-rendez-vous" : "Pre-Appointment Questionnaire"}
+              </h3>
+              
+              <div>
+                <label className="block text-sm mb-1">{language === 'fr' ? "Groupe Sanguin" : "Blood Type"}</label>
+                <input className="w-full border rounded px-3 py-2" type="text" placeholder="e.g. O+, A-, Unknown" value={questionnaire.bloodType} onChange={e => setQuestionnaire({...questionnaire, bloodType: e.target.value})} required/>
+              </div>
+              
+              <div>
+                <label className="block text-sm mb-1">{language === 'fr' ? "Maladies contagieuses ?" : "Contagious Diseases?"}</label>
+                <input className="w-full border rounded px-3 py-2" type="text" placeholder={language === 'fr' ? "Aucune, ou précisez..." : "None, or specify..."} value={questionnaire.contagiousDisease} onChange={e => setQuestionnaire({...questionnaire, contagiousDisease: e.target.value})} required/>
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">{language === 'fr' ? "Allergies" : "Allergies"}</label>
+                <input className="w-full border rounded px-3 py-2" type="text" placeholder={language === 'fr' ? "Allergies médicamenteuses ou autres" : "Medication or other allergies"} value={questionnaire.allergies} onChange={e => setQuestionnaire({...questionnaire, allergies: e.target.value})} required/>
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">{language === 'fr' ? "Maladies Chroniques" : "Chronic Illnesses"}</label>
+                <input className="w-full border rounded px-3 py-2" type="text" placeholder={language === 'fr' ? "Ex: Diabète, Hypertension..." : "Ex: Diabetes, Hypertension..."} value={questionnaire.chronicIllnesses} onChange={e => setQuestionnaire({...questionnaire, chronicIllnesses: e.target.value})} required/>
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">{language === 'fr' ? "Médicaments Actuels" : "Current Medications"}</label>
+                <input className="w-full border rounded px-3 py-2" type="text" placeholder={language === 'fr' ? "Liste des traitements" : "List of ongoing treatments"} value={questionnaire.medications} onChange={e => setQuestionnaire({...questionnaire, medications: e.target.value})} />
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">{language === 'fr' ? "Chirurgies Précédentes" : "Previous Surgeries"}</label>
+                <input className="w-full border rounded px-3 py-2" type="text" placeholder={language === 'fr' ? "Aucune, ou précisez..." : "None, or specify..."} value={questionnaire.surgeries} onChange={e => setQuestionnaire({...questionnaire, surgeries: e.target.value})} />
+              </div>
+
+              <div>
+                <label className="block text-sm mb-1">{language === 'fr' ? "Antécédents Familiaux" : "Family Medical History"}</label>
+                <input className="w-full border rounded px-3 py-2" type="text" placeholder={language === 'fr' ? "Ex: Maladies cardiaques dans la famille" : "Ex: Heart diseases in family"} value={questionnaire.familyHistory} onChange={e => setQuestionnaire({...questionnaire, familyHistory: e.target.value})} />
+              </div>
+
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-sm mb-1">{language === 'fr' ? "Fumez-vous ?" : "Do you smoke?"}</label>
+                  <select className="w-full border rounded px-3 py-2" value={questionnaire.smoking} onChange={e => setQuestionnaire({...questionnaire, smoking: e.target.value})}>
+                    <option value="No">{language === 'fr' ? "Non" : "No"}</option>
+                    <option value="Yes">{language === 'fr' ? "Oui" : "Yes"}</option>
+                  </select>
+                </div>
+                <div className="flex-1">
+                  <label className="block text-sm mb-1">{language === 'fr' ? "Consommation d'alcool ?" : "Consume Alcohol?"}</label>
+                  <select className="w-full border rounded px-3 py-2" value={questionnaire.alcohol} onChange={e => setQuestionnaire({...questionnaire, alcohol: e.target.value})}>
+                    <option value="No">{language === 'fr' ? "Non" : "No"}</option>
+                    <option value="Occasional">{language === 'fr' ? "Occasionnellement" : "Occasional"}</option>
+                    <option value="Frequent">{language === 'fr' ? "Fréquemment" : "Frequent"}</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm mb-1">{language === 'fr' ? "Pourquoi voulez-vous voir spécifiquement CE médecin ?" : "Why do you specifically want to see THIS doctor?"}</label>
+                <textarea className="w-full border rounded px-3 py-2" rows={3} placeholder={language === 'fr' ? "Décrivez brièvement vos raisons ou symptômes..." : "Briefly describe your reasons or symptoms..."} value={questionnaire.reason} onChange={e => setQuestionnaire({...questionnaire, reason: e.target.value})} required></textarea>
+              </div>
+
+            </div>
+          )}
+
           <div className="md:col-span-2 flex justify-end gap-2">
             <AppButton type="button" variant="secondary" onClick={resetForm}>
               {t("common.cancel")}
@@ -438,6 +565,39 @@ const AppointmentListPage: React.FC = () => {
           canEdit={canManage}
           onClose={closeConsultationNote}
         />
+      )}
+
+      {/* Video Modal shown after booking */}
+      {showVideoModal && (
+        <div className="fixed inset-0 bg-black/60 z-[999] flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-2xl overflow-hidden max-w-3xl w-full flex flex-col">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+              <h2 className="text-xl font-bold text-slate-800">
+                {language === 'fr' ? "Rendez-vous Confirmé !" : "Appointment Confirmed!"}
+              </h2>
+              <AppButton variant="secondary" onClick={() => setShowVideoModal(false)}>
+                ✕
+              </AppButton>
+            </div>
+            <div className="p-6 flex flex-col items-center">
+              <p className="mb-4 text-center text-slate-600">
+                {language === 'fr' 
+                  ? "Votre demande de rendez-vous a été soumise avec succès. Veuillez regarder cette courte vidéo expliquant le rôle vital de votre spécialiste :"
+                  : "Your appointment request was submitted successfully. Please watch this short video explaining the vital role of your specialist:"} 
+              </p>
+              <div className="w-full aspect-video bg-slate-100 rounded-lg overflow-hidden">
+                <iframe 
+                  className="w-full h-full" 
+                  src={assignedVideo} 
+                  title="YouTube video player" 
+                  frameBorder="0" 
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                  allowFullScreen
+                ></iframe>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div >
   );

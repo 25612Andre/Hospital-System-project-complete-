@@ -7,6 +7,7 @@ export interface AppointmentPayload {
   appointmentDate: string;
   status?: string;
   consultationFee?: number;
+  notes?: string;
 }
 
 export interface Appointment {

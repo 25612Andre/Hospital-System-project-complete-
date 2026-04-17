@@ -18,6 +18,8 @@ import com.example.hospitalmanagement.repository.AppointmentRepository;
 import com.example.hospitalmanagement.repository.DoctorRepository;
 import com.example.hospitalmanagement.repository.PatientRepository;
 import com.example.hospitalmanagement.repository.BillingRepository;
+import com.example.hospitalmanagement.repository.UserAccountRepository;
+import com.example.hospitalmanagement.model.UserAccount;
 
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +38,8 @@ public class AppointmentService {
     private final BillingRepository billingRepository;
     private final BillingService billingService;
     private final AuditLogService auditLogService;
+    private final UserAccountRepository userAccountRepository;
+    private final EmailService emailService;
 
     public List<Appointment> getAll(Boolean unbilled) {
         if (Boolean.TRUE.equals(unbilled)) {
@@ -134,6 +138,27 @@ public class AppointmentService {
             billingService.generateBill(saved.getId());
         } catch (Exception e) {
             // Ignore if fails (e.g. duplicate), though it shouldn't for new appointment
+        }
+        
+        // Notify the doctor via email
+        try {
+            String doctorEmail = null;
+            List<UserAccount> accounts = userAccountRepository.findByDoctor_Id(doctor.getId());
+            if (accounts != null && !accounts.isEmpty()) {
+                doctorEmail = accounts.get(0).getUsername();
+            } else if (doctor.getContact() != null && doctor.getContact().contains("@")) {
+                doctorEmail = doctor.getContact();
+            }
+            if (doctorEmail != null && !doctorEmail.isBlank()) {
+                emailService.sendNewAppointmentEmail(
+                    doctorEmail,
+                    doctor.getName(),
+                    patient.getFullName(),
+                    appointmentDate.toString()
+                );
+            }
+        } catch (Exception e) {
+            // Do not fail appointment creation
         }
         
         return saved;

@@ -34,7 +34,7 @@ function AppTable<T extends { id?: number | string }>({
           <thead className="bg-slate-50 text-left text-xs font-semibold text-slate-500 uppercase tracking-widest border-b border-slate-200">
             <tr>
               {columns.map((col) => (
-                <th key={col.key as string} className="px-6 py-4">
+                <th key={col.key as string} className="px-6 py-4 whitespace-nowrap">
                   {col.header}
                 </th>
               ))}
@@ -47,7 +47,7 @@ function AppTable<T extends { id?: number | string }>({
                 className="bg-white hover:bg-slate-50 transition-colors duration-150"
               >
                 {columns.map((col) => (
-                  <td key={col.key as string} className="px-4 py-3 text-slate-800">
+                  <td key={col.key as string} className="px-4 py-3 text-slate-800 whitespace-nowrap">
                     {col.render
                       ? col.render(row)
                       : String((row as Record<string, unknown>)[col.key as string] ?? "")}
