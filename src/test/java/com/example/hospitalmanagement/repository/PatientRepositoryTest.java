@@ -32,18 +32,18 @@ class PatientRepositoryTest {
         provinceToSave.setType(LocationType.PROVINCE);
         Location province = locationRepository.save(provinceToSave);
 
-        Location districtToSave = new Location();
-        districtToSave.setCode("RW-KGL-GAS");
-        districtToSave.setName("Gasabo");
-        districtToSave.setType(LocationType.DISTRICT);
-        districtToSave.setParent(province);
-        Location district = locationRepository.save(districtToSave);
+        Location departementToSave = new Location();
+        departementToSave.setCode("RW-KGL-GAS");
+        departementToSave.setName("Gasabo");
+        departementToSave.setType(LocationType.DEPARTEMENT);
+        departementToSave.setParent(province);
+        Location departement = locationRepository.save(departementToSave);
 
         Location villageToSave = new Location();
         villageToSave.setCode("RW-KGL-GAS-KIM-001");
         villageToSave.setName("Kimironko Village");
         villageToSave.setType(LocationType.VILLAGE);
-        villageToSave.setParent(district);
+        villageToSave.setParent(departement);
         village = locationRepository.save(villageToSave);
 
         Patient patient = new Patient();
