@@ -2,10 +2,8 @@ import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AppButton from "../../components/common/AppButton";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
-import HierarchicalLocationPicker from "../../components/common/HierarchicalLocationPicker";
 import { personApi } from "../../api/personApi";
 import type { Person } from "../../api/personApi";
-import type { LocationNode } from "../../api/locationApi";
 import { toast } from "react-toastify";
 
 type FieldKey = "fullName" | "age" | "gender" | "email" | "phone";
@@ -47,10 +45,6 @@ const PersonFormPage: React.FC = () => {
       setLocationName(data.location?.name ?? "");
     }).finally(() => setLoading(false));
   }, [id, isEdit]);
-
-  const handleLocationChange = (name: string) => {
-    setLocationName(name);
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

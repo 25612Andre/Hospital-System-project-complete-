@@ -18,6 +18,7 @@ export interface SignupPayload {
   gender?: string;
   phone?: string;
   locationId?: number;
+  locationName?: string;
   // Doctor Registration
   departmentId?: number;
   specialization?: string;
@@ -84,6 +85,7 @@ export const authApi = {
     if (payload.gender) formData.append('gender', payload.gender);
     if (payload.phone) formData.append('phone', payload.phone);
     if (payload.locationId !== undefined) formData.append('locationId', payload.locationId.toString());
+    if (payload.locationName) formData.append('locationName', payload.locationName);
     if (payload.departmentId !== undefined) formData.append('departmentId', payload.departmentId.toString());
     if (payload.specialization) formData.append('specialization', payload.specialization);
 

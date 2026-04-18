@@ -8,8 +8,6 @@ import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { doctorApi, type Doctor } from "../../api/doctorApi";
 import { departmentApi, type Department } from "../../api/departmentApi";
 import type { PagedResult } from "../../api/personApi";
-import type { LocationNode } from "../../api/locationApi";
-import HierarchicalLocationPicker from "../../components/common/HierarchicalLocationPicker";
 import StatsBar from "../../components/common/StatsBar";
 import { useAuth } from "../../context/useAuth";
 import { userApi } from "../../api/userApi";

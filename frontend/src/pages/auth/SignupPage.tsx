@@ -2,9 +2,7 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { authApi } from "../../api/authApi";
 import AppButton from "../../components/common/AppButton";
-import HierarchicalLocationPicker from "../../components/common/HierarchicalLocationPicker";
 import { toast } from "react-toastify";
-import type { LocationNode } from "../../api/locationApi";
 import LanguageSelect from "../../components/common/LanguageSelect";
 import { useI18n } from "../../i18n/I18nProvider";
 
@@ -25,10 +23,6 @@ const SignupPage: React.FC = () => {
   });
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string>("");
-
-  const handleLocationChange = (locationId: number | null, _location: LocationNode | null) => {
-    setForm({ ...form, locationId });
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

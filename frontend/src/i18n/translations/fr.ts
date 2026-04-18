@@ -39,6 +39,7 @@ const fr = {
   "common.imageUpload.hint": "JPG, PNG, GIF ou WEBP (max {{maxMb}}MB)",
   "common.errorLoadingData": "Erreur lors du chargement des données",
   "common.unexpectedError": "Erreur inattendue. Veuillez réessayer ou contacter le support.",
+  "common.optional": "Optionnel",
 
   "layout.hospital": "Hôpital",
   "layout.managementSuite": "Suite de gestion",

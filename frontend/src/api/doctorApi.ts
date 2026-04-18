@@ -19,6 +19,7 @@ export interface Doctor {
     name?: string;
     path?: string;
   };
+  locationName?: string;
 }
 
 export const doctorApi = {

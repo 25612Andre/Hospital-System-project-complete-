@@ -17,6 +17,7 @@ export interface Person {
     parentId?: number | null;
     path?: string;
   };
+  locationName?: string;
 }
 
 export interface PagedResult<T> {
