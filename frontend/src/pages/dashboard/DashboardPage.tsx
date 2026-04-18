@@ -182,7 +182,7 @@ const DashboardPage: React.FC = () => {
                 <div className="flex flex-col gap-1">
                   <span className="text-sm font-semibold uppercase tracking-wider text-slate-500">{card.label}</span>
                   <span className={`text-4xl font-extrabold ${card.color} tracking-tight`}>
-                    {card.currency ? `RWF ${fmt.format(card.value)}` : fmt.format(card.value)}
+                    {card.currency ? `FCFA ${fmt.format(card.value)}` : fmt.format(card.value)}
                   </span>
                 </div>
                 <div className={`p-3 rounded-xl bg-white bg-opacity-50 shadow-sm ${card.color}`}>

@@ -21,6 +21,7 @@ const SignupPage: React.FC = () => {
     gender: "",
     phone: "",
     locationId: null as number | null,
+    locationName: "",
   });
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [profilePreview, setProfilePreview] = useState<string>("");
@@ -37,7 +38,7 @@ const SignupPage: React.FC = () => {
     }
 
     // Validation
-    if (!form.fullName || !form.age || !form.phone || !form.locationId || !form.gender) {
+    if (!form.fullName || !form.age || !form.phone || !form.gender) {
       toast.error(t("signup.validation.patientDetails"));
       return;
     }
@@ -52,6 +53,7 @@ const SignupPage: React.FC = () => {
         age: Number(form.age),
         gender: form.gender,
         locationId: form.locationId || undefined,
+        locationName: form.locationName || undefined,
       }, profilePicture || undefined);
       toast.success(t("signup.success"));
       navigate("/login");
@@ -218,11 +220,12 @@ const SignupPage: React.FC = () => {
           </div>
 
           <div>
-            <HierarchicalLocationPicker
-              value={form.locationId}
-              onChange={handleLocationChange}
-              label={t("common.location")}
-              required
+            <label className="block text-xs font-medium text-slate-700 mb-1">{t("common.location")} ({t("common.optional") || "Optional"})</label>
+            <input
+              className="w-full border rounded px-3 py-2 text-sm"
+              value={form.locationName || ""}
+              onChange={(e) => setForm({ ...form, locationName: e.target.value })}
+              placeholder="Enter your city or area..."
             />
           </div>
         </div>

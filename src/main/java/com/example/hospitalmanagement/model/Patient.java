@@ -55,6 +55,8 @@ public class Patient {
     @JoinColumn(name = "location_id")
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"parent", "children", "patients", "users"})
     private Location location;
+    @Transient
+    private String locationName;
 
     // Many-to-Many example: patients can be associated with multiple doctors
     @ManyToMany

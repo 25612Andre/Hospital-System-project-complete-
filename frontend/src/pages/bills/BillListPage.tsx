@@ -230,7 +230,7 @@ const BillListPage: React.FC = () => {
           {
             key: "amount",
             header: t("bills.table.amount"),
-            render: (row: Bill) => <span className="font-semibold text-slate-700">RWF {row.amount.toFixed(2)}</span>,
+            render: (bill: Bill) => <span className="font-semibold text-slate-900">FCFA {bill.amount.toLocaleString()}</span>,
           },
           {
             key: "status",

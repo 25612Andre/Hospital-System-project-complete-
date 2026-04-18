@@ -35,4 +35,5 @@ public class UserAccountRequest {
     // Doctor Registration Fields
     private Long departmentId;
     private String specialization;
+    private String locationName;
 }

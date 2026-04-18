@@ -17,6 +17,12 @@ const AccessibleAudioPlayer: React.FC<{ messageId: number; contentType?: string 
         const loadAudio = async () => {
             try {
                 const blob = await voiceMessageApi.getAudioBlob(messageId);
+                if (!blob || blob.size === 0) {
+                    console.error("Received empty audio blob for message", messageId);
+                    setError(true);
+                    setLoading(false);
+                    return;
+                }
                 url = URL.createObjectURL(blob);
                 setAudioUrl(url);
                 setLoading(false);
@@ -143,8 +149,18 @@ const VoiceMessagesPage: React.FC = () => {
             mediaStreamRef.current = stream;
             audioChunksRef.current = [];
 
-            // Let the browser choose the best container/codec by default
-            const recorder = new MediaRecorder(stream);
+            // Try to find a supported mime type
+            const mimeTypes = ['audio/webm', 'audio/ogg', 'audio/mp4', 'audio/wav'];
+            let selectedType = '';
+            for (const type of mimeTypes) {
+                if (MediaRecorder.isTypeSupported(type)) {
+                    selectedType = type;
+                    break;
+                }
+            }
+
+            console.log("Starting recording with mime type:", selectedType);
+            const recorder = new MediaRecorder(stream, selectedType ? { mimeType: selectedType } : {});
             mediaRecorderRef.current = recorder;
 
             recorder.ondataavailable = (e) => {
@@ -154,8 +170,7 @@ const VoiceMessagesPage: React.FC = () => {
             };
 
             recorder.onstop = () => {
-                // Create blob with the recorder's actual mime type, fallback to webm
-                const mimeType = recorder.mimeType || "audio/webm";
+                const mimeType = recorder.mimeType || selectedType || "audio/webm";
                 const blob = new Blob(audioChunksRef.current, { type: mimeType });
                 console.log("Recording finished. Size:", blob.size, "Type:", mimeType);
                 setAudioBlob(blob);

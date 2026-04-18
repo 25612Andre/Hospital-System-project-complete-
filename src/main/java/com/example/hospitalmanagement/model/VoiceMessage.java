@@ -41,7 +41,7 @@ public class VoiceMessage {
      * This is more reliable on cloud platforms (Render, Railway, etc.)
      * where the filesystem is ephemeral.
      */
-    @Lob
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.BINARY)
     @Column(name = "audio_data", columnDefinition = "BYTEA")
     private byte[] audioData;
 }

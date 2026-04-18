@@ -21,6 +21,7 @@ const emptyForm: Doctor = {
   specialization: "",
   department: undefined,
   location: undefined,
+  locationName: "",
 };
 
 const DoctorListPage: React.FC = () => {
@@ -50,8 +51,8 @@ const DoctorListPage: React.FC = () => {
 
   const departmentOptions = useMemo<Department[]>(() => departments ?? [], [departments]);
 
-  const handleLocationChange = (locationId: number | null, _location: LocationNode | null) => {
-    setForm({ ...form, location: locationId ? { id: locationId } : undefined });
+  const handleLocationChange = (name: string) => {
+    setForm({ ...form, locationName: name });
   };
 
   const resetForm = () => {
@@ -95,7 +96,7 @@ const DoctorListPage: React.FC = () => {
           phone: form.contact,
           specialization: form.specialization,
           departmentId: form.department.id,
-          locationId: form.location?.id
+          locationName: form.locationName
         }, profilePicture || undefined);
         toast.success(t("doctors.toast.created"));
       }
@@ -115,6 +116,7 @@ const DoctorListPage: React.FC = () => {
       specialization: doc.specialization,
       department: doc.department ? { id: doc.department.id, name: doc.department.name } : undefined,
       location: doc.location ? { id: doc.location.id } : undefined,
+      locationName: doc.location?.name || "",
       username: "", // Not editable here
       password: "",
       confirm: ""
@@ -297,10 +299,12 @@ const DoctorListPage: React.FC = () => {
             </select>
           </div>
           <div className="md:col-span-2 pt-2">
-            <HierarchicalLocationPicker
-              value={form.location?.id ?? null}
-              onChange={handleLocationChange}
-              label={t("common.location")}
+            <label className="block text-sm mb-1">{t("common.location")}</label>
+            <input
+              className="w-full border rounded px-3 py-2"
+              value={form.locationName || ""}
+              onChange={(e) => handleLocationChange(e.target.value)}
+              placeholder="Enter city or area..."
             />
           </div>
           <div className="md:col-span-2 flex justify-end gap-2">

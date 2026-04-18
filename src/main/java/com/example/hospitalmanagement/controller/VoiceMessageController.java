@@ -5,6 +5,7 @@ import com.example.hospitalmanagement.model.UserAccount;
 import com.example.hospitalmanagement.repository.UserAccountRepository;
 import com.example.hospitalmanagement.service.VoiceMessageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/voice-messages")
 @RequiredArgsConstructor
+@Slf4j
 @org.springframework.transaction.annotation.Transactional(readOnly = true)
 public class VoiceMessageController {
 
@@ -28,7 +30,7 @@ public class VoiceMessageController {
     @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<VoiceMessageResponse> sendVoiceMessage(
             @RequestParam("recipientId") Long recipientId,
-            @RequestPart("audio") MultipartFile audio,
+            @RequestParam("audio") MultipartFile audio,
             Principal principal) {
         UserAccount sender = requireActor(principal);
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -62,9 +64,13 @@ public class VoiceMessageController {
     }
 
     @GetMapping("/{id}/audio")
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public ResponseEntity<byte[]> getAudio(@PathVariable Long id, Principal principal) {
+        log.info("Requesting audio for voice message id={}", id);
         UserAccount user = requireActor(principal);
         var message = voiceMessageService.getVoiceMessage(id, user);
+        log.info("Message found, fetching audio content... (filename={}, dataLength={})", 
+            message.getAudioFilename(), message.getAudioData() != null ? message.getAudioData().length : 0);
         byte[] audio = voiceMessageService.getAudioContent(message);
 
         MediaType mediaType;

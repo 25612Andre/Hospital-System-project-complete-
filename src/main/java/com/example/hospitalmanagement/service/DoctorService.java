@@ -23,6 +23,7 @@ public class DoctorService {
     private final AppointmentService appointmentService;
     private final PatientRepository patientRepository;
     private final com.example.hospitalmanagement.repository.LocationRepository locationRepository;
+    private final LocationService locationService;
     private final AuditLogService auditLogService;
 
     public List<Doctor> getAll() {
@@ -46,6 +47,8 @@ public class DoctorService {
         com.example.hospitalmanagement.model.Location location = doctor.getLocation();
         if (location != null && location.getId() != null) {
             doctor.setLocation(locationRepository.findById(location.getId()).orElse(null));
+        } else if (doctor.getLocationName() != null && !doctor.getLocationName().isBlank()) {
+            doctor.setLocation(locationService.ensureLocationByName(doctor.getLocationName()));
         }
         Doctor saved = repository.save(doctor);
         auditLogService.logAction(
@@ -77,6 +80,8 @@ public class DoctorService {
         com.example.hospitalmanagement.model.Location location = updated.getLocation();
         if (location != null && location.getId() != null) {
             existing.setLocation(locationRepository.findById(location.getId()).orElse(null));
+        } else if (updated.getLocationName() != null && !updated.getLocationName().isBlank()) {
+            existing.setLocation(locationService.ensureLocationByName(updated.getLocationName()));
         } else {
             existing.setLocation(null);
         }

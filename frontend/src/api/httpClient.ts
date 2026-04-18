@@ -45,8 +45,9 @@ httpClient.interceptors.response.use(
           window.location.href = "/login";
         }
       }, 500);
-    } else {
-      toast.error(typeof message === "string" ? message : tStatic("common.requestFailed"));
+    } else if (!error.config?.skipToast) {
+      const displayMsg = typeof message === "string" ? message : (error.message || tStatic("common.requestFailed"));
+      toast.error(displayMsg);
     }
     return Promise.reject(error);
   }

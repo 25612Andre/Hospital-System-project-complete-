@@ -177,8 +177,12 @@ public class UserAccountService {
         }
         ua.setPatient(null);
         ua.setDoctor(null);
-        enforceRoleLinks(ua, req, profilePictureUrl);
-        assignLocation(ua, req);
+        
+        // Handle Location by Name or ID
+        Location location = resolveLocation(req);
+        ua.setLocation(location);
+        
+        enforceRoleLinks(ua, req, profilePictureUrl, location);
     }
     
     // Overload for backward compatibility
@@ -186,18 +190,22 @@ public class UserAccountService {
         bindCommonFields(ua, req, create, null);
     }
 
-    private void assignLocation(UserAccount ua, UserAccountRequest req) {
-        Long locationId = req.getLocationId();
-        if (locationId != null) {
-            Location location = locationRepository.findById(locationId)
-                    .orElseThrow(() -> new RuntimeException("Location not found"));
-            ua.setLocation(location);
-            return;
+    private Location resolveLocation(UserAccountRequest req) {
+        if (req.getLocationId() != null) {
+            return locationRepository.findById(req.getLocationId()).orElse(null);
         }
-        Patient patient = ua.getPatient();
-        if (patient != null && patient.getLocation() != null) {
-            ua.setLocation(patient.getLocation());
+        if (req.getLocationName() != null && !req.getLocationName().isBlank()) {
+            String name = req.getLocationName().trim();
+            return locationRepository.findByNameIgnoreCase(name)
+                    .orElseGet(() -> {
+                        Location loc = new Location();
+                        loc.setName(name);
+                        loc.setCode(name.toUpperCase().replaceAll("\\s+", "_") + "-" + System.currentTimeMillis());
+                        loc.setType(LocationType.PROVINCE); // Default to a flat type
+                        return locationRepository.save(loc);
+                    });
         }
+        return null;
     }
 
     private Role parseRole(String value) {
@@ -308,7 +316,7 @@ public class UserAccountService {
     }
     
     
-    private void enforceRoleLinks(UserAccount ua, UserAccountRequest req, String profilePictureUrl) {
+    private void enforceRoleLinks(UserAccount ua, UserAccountRequest req, String profilePictureUrl, Location location) {
         Role role = req.getRole();
         if (role == Role.ADMIN) {
             ua.setPatient(null);
@@ -338,11 +346,12 @@ public class UserAccountService {
                     throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone already registered for another patient");
                 }
                 Long locationId = req.getLocationId();
-                if (locationId == null) {
-                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Location is required for new patient registration");
+                if (location == null && locationId != null) {
+                     location = locationRepository.findById(locationId).orElse(null);
                 }
-                Location location = locationRepository.findById(locationId)
-                         .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Location not found"));
+                if (location == null && req.getLocationName() != null && !req.getLocationName().isBlank()) {
+                     location = resolveLocation(req);
+                }
                          
                 Patient newPatient = new Patient();
                 newPatient.setFullName(req.getFullName());

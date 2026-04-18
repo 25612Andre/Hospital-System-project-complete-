@@ -115,6 +115,13 @@ export const locationApi = {
     const { data } = await httpClient.post('/locations/clear-and-import');
     return data;
   },
+
+  /**
+   * Clear all locations without re-importing.
+   */
+  clear: async (): Promise<void> => {
+    await httpClient.post('/locations/clear');
+  },
   
   /**
    * Get location counts for each type.

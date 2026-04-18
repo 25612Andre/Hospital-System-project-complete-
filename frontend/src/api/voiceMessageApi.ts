@@ -44,7 +44,7 @@ export const voiceMessageApi = {
         return data;
     },
     markAsRead: async (id: number) => {
-        await httpClient.put(`/voice-messages/${id}/read`);
+        await httpClient.put(`/voice-messages/${id}/read`, {}, { skipToast: true } as any);
     },
     getAudioUrl: (id: number) => {
         return `${apiBase}/voice-messages/${id}/audio`;
@@ -52,7 +52,8 @@ export const voiceMessageApi = {
     getAudioBlob: async (id: number) => {
         const response = await httpClient.get(`/voice-messages/${id}/audio`, {
             responseType: "blob",
-        });
+            skipToast: true,
+        } as any);
         return response.data;
     },
 };

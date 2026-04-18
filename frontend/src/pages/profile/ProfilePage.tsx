@@ -24,7 +24,8 @@ const ProfilePage: React.FC = () => {
         phone: "",
         specialization: "",
         age: "",
-        gender: ""
+        gender: "",
+        locationName: ""
     });
 
     const { data: account } = useQuery({
@@ -85,8 +86,11 @@ const ProfilePage: React.FC = () => {
                     specialization: doctor.specialization || ""
                 }));
             }
+            // Initialize location name
+            const currentLoc = patient?.location?.name || doctor?.location?.name || account?.location?.name || "";
+            setFormData(prev => ({ ...prev, locationName: currentLoc }));
         }
-    }, [isEditing, patient, doctor]);
+    }, [isEditing, patient, doctor, account]);
 
     const handleCancel = () => {
         setIsEditing(false);
@@ -138,6 +142,10 @@ const ProfilePage: React.FC = () => {
                 if (formData.fullName.trim()) payload.fullName = formData.fullName.trim();
                 if (formData.phone.trim()) payload.phone = formData.phone.trim();
                 if (formData.specialization.trim()) payload.specialization = formData.specialization.trim();
+            }
+            
+            if (formData.locationName.trim()) {
+                payload.locationName = formData.locationName.trim();
             }
 
             await userApi.updateProfile(payload);
@@ -304,15 +312,27 @@ const ProfilePage: React.FC = () => {
                         </div>
                     )}
 
-                    <div className="border-t pt-4 mt-4">
-                        <label className="block text-sm font-medium text-slate-700">{t("profile.changePasswordHint")}</label>
-                        <input
-                            type="password"
-                            className="w-full border rounded px-3 py-2 mt-1"
-                            placeholder={t("profile.newPassword")}
-                            value={formData.password}
-                            onChange={e => setFormData({ ...formData, password: e.target.value })}
-                        />
+                    <div className="border-t pt-4 mt-4 space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700">{t("common.location")}</label>
+                            <input
+                                className="w-full border rounded px-3 py-2 mt-1"
+                                placeholder="Enter your city or area..."
+                                value={formData.locationName}
+                                onChange={e => setFormData({ ...formData, locationName: e.target.value })}
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700">{t("profile.changePasswordHint")}</label>
+                            <input
+                                type="password"
+                                className="w-full border rounded px-3 py-2 mt-1"
+                                placeholder={t("profile.newPassword")}
+                                value={formData.password}
+                                onChange={e => setFormData({ ...formData, password: e.target.value })}
+                            />
+                        </div>
                     </div>
 
                     <div className="flex justify-end gap-3 pt-4">

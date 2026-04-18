@@ -28,8 +28,8 @@ const PersonFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = Boolean(id);
-  const [selectedLocationId, setSelectedLocationId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
+  const [locationName, setLocationName] = useState("");
   const [form, setForm] = useState<Person>({
     fullName: "",
     age: 0,
@@ -44,23 +44,19 @@ const PersonFormPage: React.FC = () => {
     setLoading(true);
     personApi.getById(Number(id)).then((data) => {
       setForm(data);
-      setSelectedLocationId(data.location?.id ?? null);
+      setLocationName(data.location?.name ?? "");
     }).finally(() => setLoading(false));
   }, [id, isEdit]);
 
-  const handleLocationChange = (locationId: number | null, _location: LocationNode | null) => {
-    setSelectedLocationId(locationId);
+  const handleLocationChange = (name: string) => {
+    setLocationName(name);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedLocationId) {
-      toast.error("Please select a location (at least a province)");
-      return;
-    }
-    const payload: Person = {
+    const payload: any = {
       ...form,
-      location: { id: selectedLocationId },
+      locationName: locationName.trim(),
     };
     try {
       if (isEdit && id) {
@@ -120,15 +116,13 @@ const PersonFormPage: React.FC = () => {
         </div>
 
         <div className="border-t pt-4">
-          <HierarchicalLocationPicker
-            value={selectedLocationId}
-            onChange={handleLocationChange}
-            label="Location"
-            required
+          <label className="block text-sm font-medium mb-1 text-slate-700">Location</label>
+          <input
+            className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none"
+            placeholder="Enter city, district, or hospital area..."
+            value={locationName}
+            onChange={(e) => setLocationName(e.target.value)}
           />
-          <p className="text-xs text-slate-500 mt-2">
-            Select the patient's location following the hierarchy: Province → District → Sector → Cell → Village
-          </p>
         </div>
 
         <div className="flex justify-end gap-2 pt-4 border-t">

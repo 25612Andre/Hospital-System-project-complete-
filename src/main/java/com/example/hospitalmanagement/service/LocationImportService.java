@@ -61,9 +61,29 @@ public class LocationImportService {
     @Transactional
     public ImportResult clearAndImport() {
         verifyResourceAvailable();
+        clearAll();
+        // 4. Import fresh data
+        try (InputStream inputStream = locationsJson.getInputStream()) {
+            List<LocationJsonRow> rows = objectMapper.readValue(inputStream, new TypeReference<>() {});
+            Map<String, Location> cache = new HashMap<>();
+            rows.forEach(row -> upsertHierarchy(row, cache));
+            long total = locationRepository.count();
+            locationService.clearPathCache();
+            log.info("Imported {} location rows resulting in {} unique nodes", rows.size(), total);
+            return new ImportResult(rows.size(), total, false);
+        } catch (Exception ex) {
+            log.error("Failed to import locations", ex);
+            throw new IllegalStateException("Unable to import locations from JSON", ex);
+        }
+    }
+
+    /**
+     * Clear all existing locations.
+     */
+    @Transactional
+    public void clearAll() {
         log.info("Clearing all existing locations...");
-        
-        // 1. Unlink patients from locations using direct SQL (faster and avoids validation issues)
+        // 1. Unlink patients from locations using direct SQL
         jdbcTemplate.execute("UPDATE patients SET location_id = NULL");
         log.info("Unlinked all patients from locations");
         
@@ -78,21 +98,8 @@ public class LocationImportService {
         // 3. Delete all locations (break parent links first, then delete)
         jdbcTemplate.execute("UPDATE locations SET parent_id = NULL");
         jdbcTemplate.execute("DELETE FROM locations");
+        locationService.clearPathCache();
         log.info("Deleted all existing locations");
-        
-        // 4. Import fresh data
-        try (InputStream inputStream = locationsJson.getInputStream()) {
-            List<LocationJsonRow> rows = objectMapper.readValue(inputStream, new TypeReference<>() {});
-            Map<String, Location> cache = new HashMap<>();
-            rows.forEach(row -> upsertHierarchy(row, cache));
-            long total = locationRepository.count();
-            locationService.clearPathCache();
-            log.info("Imported {} location rows resulting in {} unique nodes", rows.size(), total);
-            return new ImportResult(rows.size(), total, false);
-        } catch (Exception ex) {
-            log.error("Failed to import locations", ex);
-            throw new IllegalStateException("Unable to import locations from JSON", ex);
-        }
     }
 
     private void verifyResourceAvailable() {

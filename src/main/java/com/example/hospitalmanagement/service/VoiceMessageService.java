@@ -30,6 +30,7 @@ public class VoiceMessageService {
 
     @Transactional
     public VoiceMessageResponse sendVoiceMessage(Long recipientId, MultipartFile audio, UserAccount sender) {
+        log.info("SendVoiceMessage starting: recipientId={}, sender={}", recipientId, sender.getUsername());
         UserAccount recipient = userAccountRepository.findById(recipientId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recipient not found"));
 
@@ -50,6 +51,7 @@ public class VoiceMessageService {
 
             // Read audio bytes to store in DB (cloud-safe storage)
             byte[] audioBytes = audio.getBytes();
+            log.info("Bytes read: {}", audioBytes != null ? audioBytes.length : 0);
 
             // Also try to persist to filesystem as a backup (will fail gracefully on ephemeral filesystems)
             String filename = "voice-db-" + System.currentTimeMillis();
@@ -71,10 +73,16 @@ public class VoiceMessageService {
                     .audioData(audioBytes)
                     .build();
 
+            log.info("Saving message to database...");
             VoiceMessage saved = voiceMessageRepository.save(message);
+            log.info("Message saved with id: {}", saved.getId());
             return toResponse(saved);
         } catch (IOException e) {
+            log.error("Failed to read audio data", e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to read audio data");
+        } catch (Exception e) {
+            log.error("Unexpected error in sendVoiceMessage", e);
+            throw e;
         }
     }
 
@@ -137,19 +145,31 @@ public class VoiceMessageService {
     }
 
     private VoiceMessageResponse toResponse(VoiceMessage message) {
-        String senderName = getUserName(message.getSender());
-        String recipientName = getUserName(message.getRecipient());
+        try {
+            String senderName = getUserName(message.getSender());
+            String recipientName = getUserName(message.getRecipient());
 
-        return VoiceMessageResponse.builder()
-                .id(message.getId())
-                .senderId(message.getSender().getId())
-                .senderName(senderName)
-                .recipientId(message.getRecipient().getId())
-                .recipientName(recipientName)
-                .audioContentType(message.getAudioContentType())
-                .timestamp(message.getTimestamp())
-                .isRead(message.isRead())
-                .build();
+            return VoiceMessageResponse.builder()
+                    .id(message.getId())
+                    .senderId(message.getSender().getId())
+                    .senderName(senderName)
+                    .recipientId(message.getRecipient().getId())
+                    .recipientName(recipientName)
+                    .audioContentType(message.getAudioContentType())
+                    .timestamp(message.getTimestamp())
+                    .isRead(message.isRead())
+                    .build();
+        } catch (Exception e) {
+            log.error("Error converting VoiceMessage to response (id={}): {}", message.getId(), e.getMessage());
+            // Return a safe fallback instead of crashing the whole list
+            return VoiceMessageResponse.builder()
+                    .id(message.getId())
+                    .senderName("Unknown")
+                    .recipientName("Unknown")
+                    .audioContentType(message.getAudioContentType())
+                    .timestamp(message.getTimestamp())
+                    .build();
+        }
     }
 
     private String getUserName(UserAccount user) {

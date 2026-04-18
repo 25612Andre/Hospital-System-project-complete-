@@ -29,14 +29,14 @@ public class Location {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 50)
+    @Column(length = 50)
     private String code;
 
-    @Column(nullable = false, length = 120)
+    @Column(length = 120)
     private String name;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private LocationType type;
 
     @ManyToOne(fetch = FetchType.EAGER)

@@ -51,6 +51,8 @@ public class Doctor {
     @JoinColumn(name = "location_id")
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"parent", "children", "patients", "users", "doctors"})
     private Location location;
+    @Transient
+    private String locationName;
 
     // Many-to-Many pairing with patients
     @ManyToMany(mappedBy = "doctors")

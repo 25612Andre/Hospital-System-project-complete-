@@ -208,8 +208,8 @@ const BillDetailsModal: React.FC<BillDetailsModalProps> = ({ bill, onClose }) =>
                                             </div>
                                         </td>
                                         <td className="py-4 px-4 text-center text-slate-700">1</td>
-                                        <td className="py-4 px-4 text-right text-slate-700 font-mono">RWF {bill.amount.toLocaleString()}</td>
-                                        <td className="py-4 px-4 text-right text-slate-900 font-semibold font-mono">RWF {bill.amount.toLocaleString()}</td>
+                                        <td className="py-4 px-4 text-right text-slate-700 font-mono">FCFA {bill.amount.toLocaleString()}</td>
+                                        <td className="py-4 px-4 text-right text-slate-900 font-semibold font-mono">FCFA {bill.amount.toLocaleString()}</td>
                                     </tr>
                                 </tbody>
                             </table>

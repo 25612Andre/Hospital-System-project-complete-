@@ -332,7 +332,7 @@ const AppointmentListPage: React.FC = () => {
               <option value="">{t("appointments.form.selectDoctor")}</option>
               {doctorOptions.map((doc) => (
                 <option key={doc.id} value={doc.id}>
-                  {doc.name} - {doc.specialization} ({doc.department?.name}) - {doc.department?.consultationFee} RWF
+                  {doc.name} - {doc.specialization} ({doc.department?.name}) - {doc.department?.consultationFee} FCFA
                 </option>
               ))}
             </select>

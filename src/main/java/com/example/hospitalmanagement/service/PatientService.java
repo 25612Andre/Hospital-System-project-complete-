@@ -94,12 +94,16 @@ public class PatientService {
         if (repository.existsByPhone(patient.getPhone())) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Phone already registered for another patient");
         }
-        // Resolve location from database if only ID is provided
+        // Resolve location by ID
         if (patient.getLocation() != null && patient.getLocation().getId() != null) {
             Long locationId = patient.getLocation().getId();
             Location resolvedLocation = locationRepository.findById(locationId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Location not found"));
             patient.setLocation(resolvedLocation);
+        } 
+        // Resolve location by Name (new simple system)
+        else if (patient.getLocationName() != null && !patient.getLocationName().isBlank()) {
+            patient.setLocation(locationService.ensureLocationByName(patient.getLocationName()));
         }
         return repository.save(patient);
     }
@@ -119,13 +123,18 @@ public class PatientService {
         existing.setAge(updated.getAge());
         existing.setEmail(updated.getEmail());
         existing.setPhone(updated.getPhone());
-        // Resolve location from database if only ID is provided
+        // Resolve location by ID
         if (updated.getLocation() != null && updated.getLocation().getId() != null) {
             Long locationId = updated.getLocation().getId();
             Location resolvedLocation = locationRepository.findById(locationId)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Location not found"));
             existing.setLocation(resolvedLocation);
-        } else {
+        } 
+        // Resolve location by Name
+        else if (updated.getLocationName() != null && !updated.getLocationName().isBlank()) {
+            existing.setLocation(locationService.ensureLocationByName(updated.getLocationName()));
+        }
+        else {
             existing.setLocation(null);
         }
         return repository.save(existing);

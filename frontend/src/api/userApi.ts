@@ -21,6 +21,8 @@ export type UserProfileUpdatePayload = {
     specialization?: string;
     gender?: string;
     age?: number;
+    locationId?: number;
+    locationName?: string;
 };
 
 export const userApi = {

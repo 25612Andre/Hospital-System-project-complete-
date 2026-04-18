@@ -137,37 +137,69 @@ export default function LocationTreePage() {
           <div>
             <h1 style={{ margin: 0, fontSize: '1.75rem', fontWeight: 700 }}>📍 Locations</h1>
             <p style={{ margin: '0.5rem 0 0', opacity: 0.8, fontSize: '0.95rem' }}>
-              Browse: Province → District → Sector → Cell → Village
+              Manage geographic areas and regions for patients and medical staff.
             </p>
           </div>
-          <button
-            onClick={async () => {
-              if (!window.confirm("Are you sure? This will wipe existing locations and re-import from the internal JSON file.")) return;
-              setLoading(true);
-              try {
-                const res = await locationApi.clearAndImport();
-                toast.success(`Successfully imported ${res.processedRows} locations!`);
-                loadLocations();
-                loadCounts();
-              } catch (err) {
-                toast.error('Failed to import locations');
-              } finally {
-                setLoading(false);
-              }
-            }}
-            style={{
-              background: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              padding: '0.75rem 1.25rem',
-              borderRadius: '8px',
-              fontWeight: 600,
-              cursor: 'pointer',
-              boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-            }}
-          >
-            Import Data
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={async () => {
+                if (!window.confirm("Are you sure? This will wipe ALL locations. This is useful for clearing the 5-level hierarchy and starting fresh.")) return;
+                setLoading(true);
+                try {
+                  await locationApi.clear();
+                  toast.success("All locations cleared!");
+                  setBreadcrumbs([{ id: null, name: 'Locations', type: null }]);
+                  setCurrentParentId(null);
+                  loadLocations();
+                  loadCounts();
+                } catch (err) {
+                  toast.error('Failed to clear locations');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              style={{
+                background: '#ef4444',
+                color: 'white',
+                border: 'none',
+                padding: '0.75rem 1.25rem',
+                borderRadius: '8px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+              }}
+            >
+              Clear All
+            </button>
+            <button
+              onClick={async () => {
+                if (!window.confirm("This will import the standard 5-level hierarchy (Province -> Village).")) return;
+                setLoading(true);
+                try {
+                  const res = await locationApi.clearAndImport();
+                  toast.success(`Successfully imported ${res.processedRows} locations!`);
+                  loadLocations();
+                  loadCounts();
+                } catch (err) {
+                  toast.error('Failed to import locations');
+                } finally {
+                  setLoading(false);
+                }
+              }}
+              style={{
+                background: '#3b82f6',
+                color: 'white',
+                border: 'none',
+                padding: '0.75rem 1.25rem',
+                borderRadius: '8px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+              }}
+            >
+              Import Standard Data
+            </button>
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -230,15 +262,15 @@ export default function LocationTreePage() {
         ))}
       </div>
 
-      {/* Search Bar */}
-      <div style={{ marginBottom: '1.5rem' }}>
+      {/* Search Bar and Simple Add */}
+      <div style={{ marginBottom: '1.5rem', display: 'flex', gap: '1rem' }}>
         <input
           type="text"
           placeholder="🔍 Search locations..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           style={{
-            width: '100%',
+            flex: 1,
             padding: '0.875rem 1rem',
             fontSize: '0.95rem',
             border: '2px solid #e2e8f0',
@@ -247,6 +279,33 @@ export default function LocationTreePage() {
             boxSizing: 'border-box'
           }}
         />
+        <div style={{ display: 'flex', gap: '0.5rem' }}>
+           <input 
+             id="new-loc-name"
+             type="text" 
+             placeholder="New Location Name..."
+             style={{ padding: '0.875rem 1rem', border: '2px solid #e2e8f0', borderRadius: '10px', minWidth: '200px' }}
+           />
+           <button 
+             onClick={async () => {
+               const nameEl = document.getElementById('new-loc-name') as HTMLInputElement;
+               const name = nameEl.value.trim();
+               if (!name) return;
+               try {
+                 await locationApi.create({ name, code: name.toUpperCase().replace(/\s+/g, '_'), type: currentLevel || 'PROVINCE', parentId: currentParentId || undefined });
+                 toast.success("Location added!");
+                 nameEl.value = "";
+                 loadLocations();
+                 loadCounts();
+               } catch (err) {
+                 toast.error("Failed to add location");
+               }
+             }}
+             style={{ background: '#10b981', color: 'white', border: 'none', padding: '0 1.5rem', borderRadius: '10px', fontWeight: 600, cursor: 'pointer' }}
+           >
+             Add
+           </button>
+        </div>
       </div>
 
       {/* Current Level Label */}

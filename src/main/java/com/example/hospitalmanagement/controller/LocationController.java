@@ -115,6 +115,18 @@ public class LocationController {
     }
 
     /**
+     * Clear all existing locations.
+     */
+    @PostMapping("/clear")
+    public ResponseEntity<ResponseMessageDTO> clear() {
+        locationImportService.clearAll();
+        return ResponseEntity.ok(ResponseMessageDTO.builder()
+                .message("All locations cleared")
+                .success(true)
+                .build());
+    }
+
+    /**
      * Import locations from JSON (only if table is empty or force=true).
      */
     @PostMapping("/import")

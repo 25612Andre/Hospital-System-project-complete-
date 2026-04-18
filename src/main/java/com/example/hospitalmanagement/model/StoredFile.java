@@ -19,7 +19,7 @@ public class StoredFile {
     @Column(nullable = false)
     private String contentType;
 
-    @Lob
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.BINARY)
     @Column(nullable = false, columnDefinition = "BYTEA")
     @Basic(fetch = FetchType.LAZY)
     private byte[] data;

@@ -43,12 +43,12 @@ public class LocationService {
         validate(request, true);
         Location parent = resolveParent(request.getParentId());
 
-        Location location = Objects.requireNonNull(Location.builder()
-                .code(request.getCode().trim())
+        Location location = Location.builder()
+                .code(request.getCode() != null ? request.getCode().trim() : ("LOC-" + System.currentTimeMillis()))
                 .name(request.getName().trim())
-                .type(request.getType())
+                .type(request.getType() != null ? request.getType() : LocationType.PROVINCE) // Fallback to PROVINCE as root-ish
                 .parent(parent)
-                .build());
+                .build();
 
         Location saved = repository.save(location);
         clearPathCache();
@@ -64,13 +64,13 @@ public class LocationService {
 
     public LocationDTO update(@NonNull Long id, LocationRequest request) {
         validate(request, false);
-        Location location = Objects.requireNonNull(repository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Location not found with ID: " + id)));
+        Location location = repository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Location not found with ID: " + id));
 
         Location parent = resolveParent(request.getParentId());
-        location.setCode(request.getCode().trim());
+        if (request.getCode() != null) location.setCode(request.getCode().trim());
         location.setName(request.getName().trim());
-        location.setType(request.getType());
+        if (request.getType() != null) location.setType(request.getType());
         location.setParent(parent);
 
         Location saved = repository.save(location);
@@ -229,6 +229,22 @@ public class LocationService {
         return result;
     }
 
+    /**
+     * Find or create a flat location by name.
+     */
+    public Location ensureLocationByName(String name) {
+        if (name == null || name.isBlank()) return null;
+        String trimmed = name.trim();
+        return repository.findByNameIgnoreCase(trimmed)
+                .orElseGet(() -> {
+                    Location loc = new Location();
+                    loc.setName(trimmed);
+                    loc.setCode(trimmed.toUpperCase().replaceAll("\\s+", "_") + "-" + System.currentTimeMillis());
+                    loc.setType(LocationType.PROVINCE); // Use PROVINCE as the base type for flat locations
+                    return repository.save(loc);
+                });
+    }
+
     // ==================== Helper Methods ====================
 
     private Location resolveParent(Long parentId) {
@@ -283,16 +299,11 @@ public class LocationService {
         if (request == null) {
             throw new IllegalArgumentException("Location request cannot be null");
         }
-        if (request.getCode() == null || request.getCode().isBlank()) {
-            throw new IllegalArgumentException("Code is required");
-        }
         if (request.getName() == null || request.getName().isBlank()) {
             throw new IllegalArgumentException("Name is required");
         }
-        if (request.getType() == null) {
-            throw new IllegalArgumentException("Type is required");
-        }
-        if (creating && repository.existsByCode(request.getCode().trim())) {
+        // Code and Type are now optional, but we check uniqueness if code is provided
+        if (creating && request.getCode() != null && !request.getCode().isBlank() && repository.existsByCode(request.getCode().trim())) {
             throw new IllegalArgumentException("Location code already exists: " + request.getCode());
         }
     }
