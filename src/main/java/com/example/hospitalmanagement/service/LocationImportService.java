@@ -110,10 +110,10 @@ public class LocationImportService {
 
     private void upsertHierarchy(LocationJsonRow row, Map<String, Location> cache) {
         Location province = ensureLocation(LocationType.PROVINCE, row.getProvinceCodeStr(), row.getProvinceName(), null, cache);
-        Location district = ensureLocation(LocationType.DISTRICT, row.getDistrictCodeStr(), row.getDistrictName(), province, cache);
-        Location sector = ensureLocation(LocationType.SECTOR, row.getSectorCodeStr(), row.getSectorName(), district, cache);
-        Location cell = ensureLocation(LocationType.CELL, row.getCellCodeStr(), row.getCellName(), sector, cache);
-        ensureLocation(LocationType.VILLAGE, row.getVillageCodeStr(), row.getVillageName(), cell, cache);
+        Location departement = ensureLocation(LocationType.DEPARTEMENT, row.getDistrictCodeStr(), row.getDistrictName(), province, cache);
+        Location commune = ensureLocation(LocationType.COMMUNE, row.getSectorCodeStr(), row.getSectorName(), departement, cache);
+        Location quartier = ensureLocation(LocationType.QUARTIER, row.getCellCodeStr(), row.getCellName(), commune, cache);
+        ensureLocation(LocationType.VILLAGE, row.getVillageCodeStr(), row.getVillageName(), quartier, cache);
     }
 
     private Location ensureLocation(

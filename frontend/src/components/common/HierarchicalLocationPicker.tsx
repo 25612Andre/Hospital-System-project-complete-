@@ -11,9 +11,9 @@ interface Props {
 
 const levels: { type: LocationType; label: string }[] = [
     { type: 'PROVINCE', label: 'Province' },
-    { type: 'DISTRICT', label: 'District' },
-    { type: 'SECTOR', label: 'Sector' },
-    { type: 'CELL', label: 'Cell' },
+    { type: 'DEPARTEMENT', label: 'Departement' },
+    { type: 'COMMUNE', label: 'Commune' },
+    { type: 'QUARTIER', label: 'Quartier' },
     { type: 'VILLAGE', label: 'Village' },
 ];
 

@@ -42,6 +42,7 @@ public class SecurityConfig {
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
                         // Serve uploaded profile pictures (JWT header is not sent by <img> tags)
                         .requestMatchers(HttpMethod.GET, "/uploads/profiles/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/files/**").permitAll()
                         // Allow public reads of the location tree so the frontend can render without auth friction
                         .requestMatchers(HttpMethod.GET, "/api/locations/**").permitAll()
                         // Dashboard and search: any authenticated user

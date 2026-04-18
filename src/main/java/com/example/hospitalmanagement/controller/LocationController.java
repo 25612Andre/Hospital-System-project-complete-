@@ -58,7 +58,7 @@ public class LocationController {
 
     /**
      * Main filtering endpoint - filter by any column (type, parentId, name, code, general query).
-     * Example: /api/locations?type=DISTRICT&name=Gasabo&page=0&size=20
+     * Example: /api/locations?type=DEPARTEMENT&name=Gasabo&page=0&size=20
      */
     @GetMapping
     public ResponseEntity<Page<LocationDTO>> list(
@@ -100,8 +100,8 @@ public class LocationController {
 
     // ==================== Import Endpoints ====================
 
-    /**
-     * Clear all existing locations and import fresh Rwanda data from locations.json.
+     /**
+     * Clear all existing locations and import fresh administrative data from locations.json.
      * WARNING: This unlinks all patients/users from their locations!
      */
     @PostMapping("/clear-and-import")

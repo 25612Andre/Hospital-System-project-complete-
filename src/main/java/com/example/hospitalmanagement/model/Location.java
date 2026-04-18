@@ -13,8 +13,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Self-referencing Location entity for Rwanda administrative hierarchy.
- * Follows pharmacy-management pattern: PROVINCE -> DISTRICT -> SECTOR -> CELL -> VILLAGE
+ * Self-referencing Location entity for administrative hierarchy.
+ * Follows hierarchy: PROVINCE -> DEPARTEMENT -> COMMUNE -> QUARTIER -> VILLAGE
  */
 @Entity
 @Table(name = "locations")

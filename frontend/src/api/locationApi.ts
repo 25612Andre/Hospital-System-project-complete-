@@ -1,6 +1,6 @@
 import httpClient from "./httpClient";
 
-export type LocationType = "PROVINCE" | "DISTRICT" | "SECTOR" | "CELL" | "VILLAGE";
+export type LocationType = "PROVINCE" | "DEPARTEMENT" | "COMMUNE" | "QUARTIER" | "VILLAGE";
 
 export interface LocationNode {
   id: number;

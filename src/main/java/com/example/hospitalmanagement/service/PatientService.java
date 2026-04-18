@@ -25,6 +25,7 @@ public class PatientService {
     private final com.example.hospitalmanagement.repository.AppointmentRepository appointmentRepository;
     private final com.example.hospitalmanagement.repository.BillingRepository billRepository;
     private final com.example.hospitalmanagement.repository.UserAccountRepository userAccountRepository;
+    private final com.example.hospitalmanagement.repository.VoiceMessageRepository voiceMessageRepository;
 
     public List<Patient> getAll() {
         return repository.findAll();
@@ -142,9 +143,12 @@ public class PatientService {
 
     @org.springframework.transaction.annotation.Transactional
     public void delete(@NonNull Long id) {
-        // 1. Delete Linked UserAccount
-        userAccountRepository.deleteByPatientId(id);
-
+        // 1. Delete Linked UserAccount and their Voice Messages
+        userAccountRepository.findByPatient_Id(id).ifPresent(ua -> {
+            voiceMessageRepository.deleteBySenderOrRecipientId(ua.getId());
+            userAccountRepository.delete(ua);
+        });
+        
         // 2. Delete Appointments & Bills
         List<com.example.hospitalmanagement.model.Appointment> appointments = appointmentRepository.findByPatient_Id(id);
         for (com.example.hospitalmanagement.model.Appointment app : appointments) {

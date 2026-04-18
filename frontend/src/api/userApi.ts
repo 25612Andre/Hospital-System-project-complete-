@@ -69,4 +69,11 @@ export const userApi = {
         });
         return data;
     },
+    updateUser: async (id: number, payload: UserProfileUpdatePayload) => {
+        const { data } = await httpClient.put<UserAccount>(`/users/${id}`, payload);
+        return data;
+    },
+    remove: async (id: number) => {
+        await httpClient.delete(`/users/${id}`);
+    },
 };

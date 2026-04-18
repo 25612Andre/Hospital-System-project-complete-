@@ -24,7 +24,7 @@ import java.util.Map;
 /**
  * Seeds Rwanda administrative hierarchy into a single self-referencing Location table.
  * Reads src/main/resources/data/location/locations.json and builds
- * PROVINCE -> DISTRICT -> SECTOR -> CELL -> VILLAGE records with parent links.
+ * PROVINCE -> DEPARTEMENT -> COMMUNE -> QUARTIER -> VILLAGE records with parent links.
  * 
  * Following pharmacy-management pattern exactly.
  */
@@ -59,9 +59,9 @@ public class LocationSeeder {
             }
 
             Map<String, Location> provinces = new LinkedHashMap<>();
-            Map<String, Location> districts = new LinkedHashMap<>();
-            Map<String, Location> sectors = new LinkedHashMap<>();
-            Map<String, Location> cells = new LinkedHashMap<>();
+            Map<String, Location> departements = new LinkedHashMap<>();
+            Map<String, Location> communes = new LinkedHashMap<>();
+            Map<String, Location> quartiers = new LinkedHashMap<>();
             List<Location> villages = new ArrayList<>();
 
             int total = records.size();
@@ -86,46 +86,46 @@ public class LocationSeeder {
                                 .type(LocationType.PROVINCE)
                                 .build());
 
-                Location district = districts.computeIfAbsent(dCode,
+                Location departement = departements.computeIfAbsent(dCode,
                         k -> Location.builder()
                                 .code(dCode)
                                 .name(safe(r.districtName()))
-                                .type(LocationType.DISTRICT)
+                                .type(LocationType.DEPARTEMENT)
                                 .parent(province)
                                 .build());
-
-                Location sector = sectors.computeIfAbsent(sCode,
+                                
+                Location commune = communes.computeIfAbsent(sCode,
                         k -> Location.builder()
                                 .code(sCode)
                                 .name(safe(r.sectorName()))
-                                .type(LocationType.SECTOR)
-                                .parent(district)
+                                .type(LocationType.COMMUNE)
+                                .parent(departement)
                                 .build());
-
-                Location cell = cells.computeIfAbsent(cCode,
+                                
+                Location quartier = quartiers.computeIfAbsent(cCode,
                         k -> Location.builder()
                                 .code(cCode)
                                 .name(safe(r.cellName()))
-                                .type(LocationType.CELL)
-                                .parent(sector)
+                                .type(LocationType.QUARTIER)
+                                .parent(commune)
                                 .build());
 
                 villages.add(Location.builder()
                         .code(vCode)
                         .name(safe(r.villageName()))
                         .type(LocationType.VILLAGE)
-                        .parent(cell)
+                        .parent(quartier)
                         .build());
             }
 
             locationRepo.saveAll(new ArrayList<>(provinces.values()));
-            locationRepo.saveAll(new ArrayList<>(districts.values()));
-            locationRepo.saveAll(new ArrayList<>(sectors.values()));
-            locationRepo.saveAll(new ArrayList<>(cells.values()));
+            locationRepo.saveAll(new ArrayList<>(departements.values()));
+            locationRepo.saveAll(new ArrayList<>(communes.values()));
+            locationRepo.saveAll(new ArrayList<>(quartiers.values()));
             locationRepo.saveAll(new ArrayList<>(villages));
-
-            log.info("Seeded locations (self-referencing). Raw rows: {} | Skipped: {} | Provinces: {} | Districts: {} | Sectors: {} | Cells: {} | Villages: {}",
-                    total, skipped, provinces.size(), districts.size(), sectors.size(), cells.size(), villages.size());
+            
+            log.info("Seeded locations (self-referencing). Raw rows: {} | Skipped: {} | Provinces: {} | Departements: {} | Communes: {} | Quartiers: {} | Villages: {}",
+                    total, skipped, provinces.size(), departements.size(), communes.size(), quartiers.size(), villages.size());
 
         } catch (Exception e) {
             log.error("Failed to seed Rwanda locations", e);

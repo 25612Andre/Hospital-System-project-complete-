@@ -12,4 +12,8 @@ public interface VoiceMessageRepository extends JpaRepository<VoiceMessage, Long
     List<VoiceMessage> findByRecipientOrderByTimestampDesc(UserAccount recipient);
     List<VoiceMessage> findBySenderOrderByTimestampDesc(UserAccount sender);
     long countByRecipientAndIsReadFalse(UserAccount recipient);
+    
+    @org.springframework.data.jpa.repository.Modifying
+    @org.springframework.data.jpa.repository.Query("delete from VoiceMessage v where v.sender.id = :id or v.recipient.id = :id")
+    void deleteBySenderOrRecipientId(@org.springframework.data.repository.query.Param("id") Long id);
 }

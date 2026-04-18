@@ -3,21 +3,21 @@ import { toast } from 'react-toastify';
 import locationApi from '../../api/locationApi';
 import type { LocationDTO, LocationType } from '../../api/locationApi';
 
-const typeHierarchy: LocationType[] = ['PROVINCE', 'DISTRICT', 'SECTOR', 'CELL', 'VILLAGE'];
+const typeHierarchy: LocationType[] = ['PROVINCE', 'DEPARTEMENT', 'COMMUNE', 'QUARTIER', 'VILLAGE'];
 
 const typeLabels: Record<LocationType, string> = {
   PROVINCE: 'Provinces',
-  DISTRICT: 'Districts',
-  SECTOR: 'Sectors',
-  CELL: 'Cells',
+  DEPARTEMENT: 'Departements',
+  COMMUNE: 'Communes',
+  QUARTIER: 'Quartiers',
   VILLAGE: 'Villages',
 };
 
 const typeColors: Record<LocationType, string> = {
   PROVINCE: '#6366f1',
-  DISTRICT: '#8b5cf6',
-  SECTOR: '#ec4899',
-  CELL: '#f59e0b',
+  DEPARTEMENT: '#8b5cf6',
+  COMMUNE: '#ec4899',
+  QUARTIER: '#f59e0b',
   VILLAGE: '#10b981',
 };
 
@@ -38,9 +38,9 @@ export default function LocationTreePage() {
   const [currentLevel, setCurrentLevel] = useState<LocationType>('PROVINCE');
   const [typeCounts, setTypeCounts] = useState<Record<LocationType, number>>({
     PROVINCE: 0,
-    DISTRICT: 0,
-    SECTOR: 0,
-    CELL: 0,
+    DEPARTEMENT: 0,
+    COMMUNE: 0,
+    QUARTIER: 0,
     VILLAGE: 0,
   });
 
@@ -71,9 +71,9 @@ export default function LocationTreePage() {
       const counts = await locationApi.stats();
       setTypeCounts({
         PROVINCE: counts.PROVINCE || 0,
-        DISTRICT: counts.DISTRICT || 0,
-        SECTOR: counts.SECTOR || 0,
-        CELL: counts.CELL || 0,
+        DEPARTEMENT: counts.DEPARTEMENT || 0,
+        COMMUNE: counts.COMMUNE || 0,
+        QUARTIER: counts.QUARTIER || 0,
         VILLAGE: counts.VILLAGE || 0,
       });
     } catch (err) {

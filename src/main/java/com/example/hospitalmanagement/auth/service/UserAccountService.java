@@ -18,7 +18,11 @@ import com.example.hospitalmanagement.service.LocationService;
 import com.example.hospitalmanagement.service.DoctorService;
 import com.example.hospitalmanagement.security.JwtService;
 
+import com.example.hospitalmanagement.model.enums.AuditAction;
+import com.example.hospitalmanagement.model.enums.EntityType;
+import com.example.hospitalmanagement.service.AuditLogService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
@@ -44,6 +48,8 @@ public class UserAccountService {
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
     private final com.example.hospitalmanagement.service.FileStorageService fileStorageService;
+    private final AuditLogService auditLogService;
+    private final com.example.hospitalmanagement.repository.VoiceMessageRepository voiceMessageRepository;
 
     public List<UserAccount> getAll() {
         return userAccountRepository.findAll();
@@ -89,19 +95,41 @@ public class UserAccountService {
         
         UserAccount ua = new UserAccount();
         bindCommonFields(ua, req, true, profilePictureUrl);
-        return userAccountRepository.save(ua);
+        UserAccount saved = userAccountRepository.save(ua);
+        
+        auditLogService.logAction(EntityType.USER_ACCOUNT, saved.getId(), AuditAction.CREATE, 
+            "User created manually via admin/signup", null, saved.getUsername());
+            
+        return saved;
     }
 
     public UserAccount update(@NonNull Long id, @NonNull UserAccountRequest req) {
         UserAccount ua = userAccountRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User account not found"));
         ensureUsernameAvailable(req.getUsername(), id);
+        
+        String oldRole = ua.getRole().name();
         bindCommonFields(ua, req, false);
-        return userAccountRepository.save(ua);
+        UserAccount saved = userAccountRepository.save(ua);
+        
+        auditLogService.logAction(EntityType.USER_ACCOUNT, saved.getId(), AuditAction.UPDATE, 
+            "User updated via admin (Role: " + oldRole + " -> " + saved.getRole().name() + ")", null, saved.getUsername());
+            
+        return saved;
     }
 
+    @org.springframework.transaction.annotation.Transactional
     public void delete(@NonNull Long id) {
+        UserAccount ua = getById(id);
+        
+        // 1. Delete Voice Messages
+        voiceMessageRepository.deleteBySenderOrRecipientId(id);
+        
+        // 2. Delete User Account
         userAccountRepository.deleteById(id);
+        
+        auditLogService.logAction(EntityType.USER_ACCOUNT, id, AuditAction.DELETE, 
+            "User deleted: " + ua.getUsername(), ua.getUsername(), null);
     }
 
     public List<UserAccount> byProvinceCode(@NonNull String code) {
