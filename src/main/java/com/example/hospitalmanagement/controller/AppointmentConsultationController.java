@@ -29,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 @RestController
 @RequestMapping("/api/appointments")
 @RequiredArgsConstructor
+@org.springframework.transaction.annotation.Transactional(readOnly = true)
 public class AppointmentConsultationController {
 
     private final ConsultationNoteService consultationNoteService;
@@ -46,6 +47,7 @@ public class AppointmentConsultationController {
 
     @PutMapping("/{appointmentId}/consultation-note")
     @PreAuthorize("hasAnyRole('ADMIN','DOCTOR')")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<ConsultationNoteResponse> upsert(@PathVariable @NonNull Long appointmentId,
                                                            @RequestBody @Valid @NonNull ConsultationNoteRequest request,
                                                            Principal principal) {
@@ -55,6 +57,7 @@ public class AppointmentConsultationController {
 
     @PutMapping(value = "/{appointmentId}/consultation-note", consumes = {"multipart/form-data"})
     @PreAuthorize("hasAnyRole('ADMIN','DOCTOR')")
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<ConsultationNoteResponse> upsertMultipart(@PathVariable @NonNull Long appointmentId,
                                                                     @RequestPart("data") @Valid @NonNull ConsultationNoteRequest request,
                                                                     @RequestPart(value = "audio", required = false) MultipartFile audio,

@@ -93,6 +93,11 @@ public class LocationController {
         return ResponseEntity.ok(locationService.getPage(pageable));
     }
 
+    @GetMapping("/stats")
+    public ResponseEntity<java.util.Map<LocationType, Long>> stats() {
+        return ResponseEntity.ok(locationService.getTypeStats());
+    }
+
     // ==================== Import Endpoints ====================
 
     /**

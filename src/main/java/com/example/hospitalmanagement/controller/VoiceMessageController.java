@@ -18,12 +18,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/voice-messages")
 @RequiredArgsConstructor
+@org.springframework.transaction.annotation.Transactional(readOnly = true)
 public class VoiceMessageController {
 
     private final VoiceMessageService voiceMessageService;
     private final UserAccountRepository userAccountRepository;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @org.springframework.transaction.annotation.Transactional
     public ResponseEntity<VoiceMessageResponse> sendVoiceMessage(
             @RequestParam("recipientId") Long recipientId,
             @RequestPart("audio") MultipartFile audio,
@@ -53,6 +55,7 @@ public class VoiceMessageController {
 
     @PutMapping("/{id}/read")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @org.springframework.transaction.annotation.Transactional
     public void markAsRead(@PathVariable Long id, Principal principal) {
         UserAccount user = requireActor(principal);
         voiceMessageService.markAsRead(id, user);

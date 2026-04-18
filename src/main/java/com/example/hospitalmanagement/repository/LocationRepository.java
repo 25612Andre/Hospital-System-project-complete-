@@ -34,6 +34,8 @@ public interface LocationRepository extends JpaRepository<Location, Long>, JpaSp
 
     Page<Location> findByType(LocationType type, Pageable pageable);
 
+    long countByType(LocationType type);
+
     Page<Location> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
     Page<Location> findByNameContainingIgnoreCaseAndType(String name, LocationType type, Pageable pageable);

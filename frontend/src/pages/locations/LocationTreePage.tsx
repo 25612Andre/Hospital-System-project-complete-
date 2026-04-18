@@ -65,17 +65,17 @@ export default function LocationTreePage() {
     }
   };
 
-  // Load counts for each type
+  // Load counts for each type (optimized)
   const loadCounts = async () => {
     try {
-      const counts: Record<LocationType, number> = {
-        PROVINCE: 0, DISTRICT: 0, SECTOR: 0, CELL: 0, VILLAGE: 0,
-      };
-      for (const type of typeHierarchy) {
-        const locs = await locationApi.byType(type);
-        counts[type] = locs.length;
-      }
-      setTypeCounts(counts);
+      const counts = await locationApi.stats();
+      setTypeCounts({
+        PROVINCE: counts.PROVINCE || 0,
+        DISTRICT: counts.DISTRICT || 0,
+        SECTOR: counts.SECTOR || 0,
+        CELL: counts.CELL || 0,
+        VILLAGE: counts.VILLAGE || 0,
+      });
     } catch (err) {
       console.error('Failed to load counts', err);
     }
@@ -319,7 +319,25 @@ export default function LocationTreePage() {
                   {loc.name}
                 </div>
                 {loc.path && (
-                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>📍 {loc.path}</div>
+                  <div 
+                    title={loc.path}
+                    style={{ 
+                      fontSize: '0.8rem', 
+                      color: '#475569', 
+                      background: '#f1f5f9',
+                      padding: '0.4rem 0.6rem',
+                      borderRadius: '6px',
+                      marginTop: '0.5rem',
+                      whiteSpace: 'normal',
+                      wordBreak: 'break-word',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '0.4rem'
+                    }}
+                  >
+                    <span style={{ flexShrink: 0, marginTop: '0.1rem' }}>📍</span> 
+                    <span>{loc.path}</span>
+                  </div>
                 )}
                 {canDrillDown && (
                   <div style={{ marginTop: '0.5rem', fontSize: '0.75rem', color: typeColors[loc.type] }}>

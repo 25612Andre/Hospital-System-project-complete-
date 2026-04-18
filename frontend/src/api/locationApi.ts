@@ -115,6 +115,14 @@ export const locationApi = {
     const { data } = await httpClient.post('/locations/clear-and-import');
     return data;
   },
+  
+  /**
+   * Get location counts for each type.
+   */
+  stats: async (): Promise<Record<LocationType, number>> => {
+    const { data } = await httpClient.get('/locations/stats');
+    return data;
+  },
 };
 
 // Type alias for compatibility

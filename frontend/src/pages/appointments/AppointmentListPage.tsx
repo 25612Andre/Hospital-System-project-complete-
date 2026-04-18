@@ -166,22 +166,47 @@ const AppointmentListPage: React.FC = () => {
           const doctor = doctorOptions.find(d => String(d.id) === String(form.doctorId));
           const spec = (doctor?.specialization || doctor?.department?.name || "").toLowerCase();
           
-          let videoUrl = language === 'fr' 
-            ? "https://www.youtube.com/embed/Ol2tj61J2J0" // Default FR (General Medecine)
-            : "https://www.youtube.com/embed/sEmnc_CmPR4"; // Default EN
-            
-          if (spec.includes("cardiolo")) {
+          // Use dynamic video URLs if available
+          let videoUrl = doctor?.videoUrl || doctor?.department?.educationalVideoUrl;
+
+          if (!videoUrl) {
             videoUrl = language === 'fr' 
-              ? "https://www.youtube.com/embed/JMYNkjhxy_I" 
-              : "https://www.youtube.com/embed/w2O5_klsuXc"; // Cardio
-          } else if (spec.includes("pediatr") || spec.includes("pédiatr")) {
-            videoUrl = language === 'fr' 
-              ? "https://www.youtube.com/embed/st9qu2RyJLM" 
-              : "https://www.youtube.com/embed/ZKKNQ_lA1HQ"; // Ped
-          } else if (spec.includes("neuro")) {
-            videoUrl = language === 'fr' 
-              ? "https://www.youtube.com/embed/jH2ZvKq_9Gk" 
-              : "https://www.youtube.com/embed/HQk-0yALVBA"; // Neuro
+              ? "https://www.youtube.com/embed/Ol2tj61J2J0" // Default FR (General Medecine)
+              : "https://www.youtube.com/embed/sEmnc_CmPR4"; // Default EN
+              
+            if (spec.includes("cardiolo")) {
+              videoUrl = language === 'fr' 
+                ? "https://www.youtube.com/embed/JMYNkjhxy_I" 
+                : "https://www.youtube.com/embed/w2O5_klsuXc"; // Cardio
+            } else if (spec.includes("pediatr") || spec.includes("pédiatr")) {
+              videoUrl = language === 'fr' 
+                ? "https://www.youtube.com/embed/st9qu2RyJLM" 
+                : "https://www.youtube.com/embed/ZKKNQ_lA1HQ"; // Ped
+            } else if (spec.includes("neuro")) {
+              videoUrl = language === 'fr' 
+                ? "https://www.youtube.com/embed/jH2ZvKq_9Gk" 
+                : "https://www.youtube.com/embed/HQk-0yALVBA"; // Neuro
+            } else if (spec.includes("radio") || spec.includes("imagerie")) {
+              videoUrl = language === 'fr' 
+                ? "https://www.youtube.com/embed/A8U9EonFh8I" // Radio FR
+                : "https://www.youtube.com/embed/S2C_A3aV7qA"; // Radio EN
+            } else if (spec.includes("gyne") || spec.includes("gyné")) {
+              videoUrl = language === 'fr' 
+                ? "https://www.youtube.com/embed/7X84iC-U8X4" // Gyn FR
+                : "https://www.youtube.com/embed/XW869m_pLzM"; // Gyn EN
+            } else if (spec.includes("ophtal")) {
+              videoUrl = language === 'fr' 
+                ? "https://www.youtube.com/embed/v9qO_D4rY4Q" // Ophtal FR
+                : "https://www.youtube.com/embed/Rk5E-qG9CIs"; // Ophtal EN
+            } else if (spec.includes("derma")) {
+              videoUrl = language === 'fr' 
+                ? "https://www.youtube.com/embed/N-0-h7C4qyo" // Derma FR
+                : "https://www.youtube.com/embed/ZqRk_lWbE7k"; // Derma EN
+            } else if (spec.includes("chirur") || spec.includes("surger")) {
+              videoUrl = language === 'fr' 
+                ? "https://www.youtube.com/embed/8-P1Y5Qy7aE" // Surgery FR
+                : "https://www.youtube.com/embed/9oF5V-nC-X0"; // Surgery EN
+            }
           }
 
           setAssignedVideo(videoUrl);

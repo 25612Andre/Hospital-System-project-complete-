@@ -7,10 +7,12 @@ export interface Doctor {
   contact: string;
   specialization: string;
   profilePictureUrl?: string;
+  videoUrl?: string;
   department?: {
     id: number;
     name?: string;
     consultationFee?: number;
+    educationalVideoUrl?: string;
   };
   location?: {
     id: number;

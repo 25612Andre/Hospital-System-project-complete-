@@ -71,6 +71,10 @@ public class LocationImportService {
         jdbcTemplate.execute("UPDATE user_accounts SET location_id = NULL");
         log.info("Unlinked all users from locations");
         
+        // 2b. Unlink doctors from locations using direct SQL
+        jdbcTemplate.execute("UPDATE doctors SET location_id = NULL");
+        log.info("Unlinked all doctors from locations");
+        
         // 3. Delete all locations (break parent links first, then delete)
         jdbcTemplate.execute("UPDATE locations SET parent_id = NULL");
         jdbcTemplate.execute("DELETE FROM locations");

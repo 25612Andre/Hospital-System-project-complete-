@@ -33,6 +33,9 @@ public class Department {
     @Column(nullable = false)
     private Double consultationFee;
 
+    @Column(name = "educational_video_url", length = 500)
+    private String educationalVideoUrl;
+
     @OneToMany(mappedBy = "department")
     @JsonIgnore
     @Builder.Default

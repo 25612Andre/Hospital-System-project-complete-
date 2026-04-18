@@ -1,22 +1,21 @@
 package com.example.hospitalmanagement.service;
 
-import org.springframework.beans.factory.annotation.Value;
+import com.example.hospitalmanagement.model.StoredFile;
+import com.example.hospitalmanagement.repository.StoredFileRepository;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Set;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class FileStorageService {
 
-    @Value("${file.upload-dir:uploads/profiles}")
-    private String uploadDir;
+    private final StoredFileRepository storedFileRepository;
 
     private static final long MAX_SIZE_BYTES = 5L * 1024 * 1024;
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of(
@@ -29,15 +28,10 @@ public class FileStorageService {
             "image/webp"
     );
 
+    @Transactional
     public String storeFile(MultipartFile file) throws IOException {
         if (file.isEmpty()) {
             throw new IllegalArgumentException("Cannot store empty file");
-        }
-
-        // Create upload directory if it doesn't exist
-        Path uploadPath = Paths.get(uploadDir).toAbsolutePath().normalize();
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
         }
 
         // Generate unique filename
@@ -48,24 +42,24 @@ public class FileStorageService {
         }
         String filename = UUID.randomUUID().toString() + fileExtension;
 
-        // Store file
-        Path targetLocation = uploadPath.resolve(filename);
-        Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+        // Store file in DB
+        StoredFile storedFile = StoredFile.builder()
+                .filename(filename)
+                .contentType(file.getContentType())
+                .data(file.getBytes())
+                .build();
+        
+        storedFileRepository.save(storedFile);
 
-        // Return relative path
-        return "/uploads/profiles/" + filename;
+        // Return URL that our controller will handle
+        return "/api/files/download/" + filename;
     }
 
+    @Transactional
     public void deleteFile(String fileUrl) {
-        try {
-            if (fileUrl != null && fileUrl.startsWith("/uploads/profiles/")) {
-                String filename = fileUrl.substring("/uploads/profiles/".length());
-                Path filePath = Paths.get(uploadDir).toAbsolutePath().normalize().resolve(filename);
-                Files.deleteIfExists(filePath);
-            }
-        } catch (IOException e) {
-            // Log error but don't throw exception
-            System.err.println("Error deleting file: " + e.getMessage());
+        if (fileUrl != null && fileUrl.contains("/api/files/download/")) {
+            String filename = fileUrl.substring(fileUrl.lastIndexOf("/") + 1);
+            storedFileRepository.deleteByFilename(filename);
         }
     }
 
@@ -79,12 +73,10 @@ public class FileStorageService {
             return false;
         }
 
-        // Restrict to common browser-friendly image formats
         if (!ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase())) {
             return false;
         }
 
-        // Check file size (max 5MB)
         return file.getSize() <= MAX_SIZE_BYTES;
     }
 }

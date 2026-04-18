@@ -15,11 +15,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.stream.Collectors;
 
 /**
  * Location service following pharmacy-management pattern.
@@ -165,6 +168,15 @@ public class LocationService {
     @Transactional(readOnly = true)
     public List<LocationDTO> getChildren(@NonNull Long parentId) {
         return repository.findByParentId(parentId).stream().map(this::toDto).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public Map<LocationType, Long> getTypeStats() {
+        return Arrays.stream(LocationType.values())
+            .collect(Collectors.toMap(
+                type -> type,
+                type -> repository.countByType(type)
+            ));
     }
 
     @Transactional(readOnly = true)
