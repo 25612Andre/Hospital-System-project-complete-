@@ -412,7 +412,11 @@ public class UserAccountService {
     }
     
     // Overload for backward compatibility
+    private void enforceRoleLinks(UserAccount ua, UserAccountRequest req, String profilePictureUrl) {
+        enforceRoleLinks(ua, req, profilePictureUrl, null);
+    }
+    
     private void enforceRoleLinks(UserAccount ua, UserAccountRequest req) {
-        enforceRoleLinks(ua, req, null);
+        enforceRoleLinks(ua, req, null, null);
     }
 }
