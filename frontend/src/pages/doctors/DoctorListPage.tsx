@@ -13,6 +13,7 @@ import StatsBar from "../../components/common/StatsBar";
 import { useAuth } from "../../context/useAuth";
 import { userApi } from "../../api/userApi";
 import { useI18n } from "../../i18n/I18nProvider";
+import resolveBackendAssetUrl from "../../api/assetUrl";
 
 const emptyForm: Doctor = {
   name: "",
@@ -22,6 +23,11 @@ const emptyForm: Doctor = {
   department: undefined,
   location: undefined,
   locationName: "",
+};
+
+const truncateBiography = (biography?: string) => {
+  if (!biography) return "";
+  return biography.length > 120 ? `${biography.slice(0, 117)}...` : biography;
 };
 
 const DoctorListPage: React.FC = () => {
@@ -81,7 +87,7 @@ const DoctorListPage: React.FC = () => {
         toast.success(t("doctors.toast.updated"));
       } else {
         if (!form.username || !form.password || !form.confirm) {
-          toast.error(t("appointments.toast.required"));
+          toast.error(t("doctors.validation.accountRequired"));
           return;
         }
         if (form.password !== form.confirm) {
@@ -330,8 +336,38 @@ const DoctorListPage: React.FC = () => {
 
       <AppTable
         columns={[
+          {
+            key: "photo",
+            header: t("common.photo"),
+            render: (row: Doctor) => (
+              <div className="flex items-center justify-center">
+                <div className="h-12 w-12 overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+                  {row.profilePictureUrl ? (
+                    <img
+                      src={resolveBackendAssetUrl(row.profilePictureUrl)}
+                      alt={row.name}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-sm font-bold text-slate-500">
+                      {row.name.charAt(0)}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ),
+          },
           { key: "name", header: t("common.name") },
           { key: "specialization", header: t("common.specialization") },
+          {
+            key: "biography",
+            header: t("common.biography"),
+            render: (row: Doctor) => (
+              <div className="max-w-xs whitespace-normal text-sm leading-5 text-slate-600">
+                {truncateBiography(row.biography) || t("common.na")}
+              </div>
+            ),
+          },
           { key: "contact", header: t("common.contact") },
           {
             key: "department",

@@ -51,6 +51,7 @@ const AppointmentListPage: React.FC = () => {
   const { roles, user } = useAuth();
   const { language, t } = useI18n();
 
+  const isAdmin = roles.includes("ADMIN");
   const isDoctor = roles.includes("DOCTOR");
   const isPatient = roles.includes("PATIENT");
   const canManage = roles.includes("ADMIN") || isDoctor;
@@ -79,6 +80,7 @@ const AppointmentListPage: React.FC = () => {
     () => doctorOptions.find((doctor) => String(doctor.id) === form.doctorId) ?? null,
     [doctorOptions, form.doctorId]
   );
+  const showDoctorPreview = Boolean(selectedDoctor) && (isPatient || isAdmin);
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -119,7 +121,7 @@ const AppointmentListPage: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.doctorId || !form.patientId || !form.appointmentDate) {
-      toast.error(t("appointments.toast.required"));
+      toast.error(t("appointments.toast.detailsRequired"));
       return;
     }
 
@@ -346,7 +348,7 @@ const AppointmentListPage: React.FC = () => {
               ))}
             </select>
           </div>
-          {isPatient && selectedDoctor && (
+          {showDoctorPreview && selectedDoctor && (
             <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 p-5">
               <div className="flex flex-col gap-4 md:flex-row md:items-start">
                 <div className="h-24 w-24 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -462,22 +464,22 @@ const AppointmentListPage: React.FC = () => {
               
               <div>
                 <label className="block text-sm mb-1">{language === 'fr' ? "Groupe Sanguin" : "Blood Type"}</label>
-                <input className="w-full border rounded px-3 py-2" type="text" placeholder="e.g. O+, A-, Unknown" value={questionnaire.bloodType} onChange={e => setQuestionnaire({...questionnaire, bloodType: e.target.value})} required/>
+                <input className="w-full border rounded px-3 py-2" type="text" placeholder="e.g. O+, A-, Unknown" value={questionnaire.bloodType} onChange={e => setQuestionnaire({...questionnaire, bloodType: e.target.value})} />
               </div>
               
               <div>
                 <label className="block text-sm mb-1">{language === 'fr' ? "Maladies contagieuses ?" : "Contagious Diseases?"}</label>
-                <input className="w-full border rounded px-3 py-2" type="text" placeholder={language === 'fr' ? "Aucune, ou précisez..." : "None, or specify..."} value={questionnaire.contagiousDisease} onChange={e => setQuestionnaire({...questionnaire, contagiousDisease: e.target.value})} required/>
+                <input className="w-full border rounded px-3 py-2" type="text" placeholder={language === 'fr' ? "Aucune, ou précisez..." : "None, or specify..."} value={questionnaire.contagiousDisease} onChange={e => setQuestionnaire({...questionnaire, contagiousDisease: e.target.value})} />
               </div>
 
               <div>
                 <label className="block text-sm mb-1">{language === 'fr' ? "Allergies" : "Allergies"}</label>
-                <input className="w-full border rounded px-3 py-2" type="text" placeholder={language === 'fr' ? "Allergies médicamenteuses ou autres" : "Medication or other allergies"} value={questionnaire.allergies} onChange={e => setQuestionnaire({...questionnaire, allergies: e.target.value})} required/>
+                <input className="w-full border rounded px-3 py-2" type="text" placeholder={language === 'fr' ? "Allergies médicamenteuses ou autres" : "Medication or other allergies"} value={questionnaire.allergies} onChange={e => setQuestionnaire({...questionnaire, allergies: e.target.value})} />
               </div>
 
               <div>
                 <label className="block text-sm mb-1">{language === 'fr' ? "Maladies Chroniques" : "Chronic Illnesses"}</label>
-                <input className="w-full border rounded px-3 py-2" type="text" placeholder={language === 'fr' ? "Ex: Diabète, Hypertension..." : "Ex: Diabetes, Hypertension..."} value={questionnaire.chronicIllnesses} onChange={e => setQuestionnaire({...questionnaire, chronicIllnesses: e.target.value})} required/>
+                <input className="w-full border rounded px-3 py-2" type="text" placeholder={language === 'fr' ? "Ex: Diabète, Hypertension..." : "Ex: Diabetes, Hypertension..."} value={questionnaire.chronicIllnesses} onChange={e => setQuestionnaire({...questionnaire, chronicIllnesses: e.target.value})} />
               </div>
 
               <div>
@@ -515,7 +517,7 @@ const AppointmentListPage: React.FC = () => {
 
               <div className="md:col-span-2">
                 <label className="block text-sm mb-1">{language === 'fr' ? "Pourquoi voulez-vous voir spécifiquement CE médecin ?" : "Why do you specifically want to see THIS doctor?"}</label>
-                <textarea className="w-full border rounded px-3 py-2" rows={3} placeholder={language === 'fr' ? "Décrivez brièvement vos raisons ou symptômes..." : "Briefly describe your reasons or symptoms..."} value={questionnaire.reason} onChange={e => setQuestionnaire({...questionnaire, reason: e.target.value})} required></textarea>
+                <textarea className="w-full border rounded px-3 py-2" rows={3} placeholder={language === 'fr' ? "Décrivez brièvement vos raisons ou symptômes..." : "Briefly describe your reasons or symptoms..."} value={questionnaire.reason} onChange={e => setQuestionnaire({...questionnaire, reason: e.target.value})}></textarea>
               </div>
 
             </div>

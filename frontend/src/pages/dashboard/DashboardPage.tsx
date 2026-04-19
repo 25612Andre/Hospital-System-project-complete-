@@ -28,6 +28,7 @@ const DashboardPage: React.FC = () => {
     enabled: isDoctor,
     retry: 1,
   });
+  const doctorPatientCount = isDoctor ? Math.max(data?.patients ?? 0, doctorPatients?.totalElements ?? 0) : data?.patients ?? 0;
 
   React.useEffect(() => {
     if (isError) toast.error(t("dashboard.error.loadFailedToast"));
@@ -75,7 +76,7 @@ const DashboardPage: React.FC = () => {
     {
       id: "patients",
       label: isDoctor ? t("dashboard.cards.myPatients") : t("dashboard.cards.totalPatients"),
-      value: data.patients,
+      value: doctorPatientCount,
       color: "text-emerald-700",
       bg: "bg-emerald-50 border-emerald-100",
       visible: !isPatient,
