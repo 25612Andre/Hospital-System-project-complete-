@@ -38,6 +38,9 @@ public class UserAccount {
     @Column(name = "profile_picture_url", length = 500)
     private String profilePictureUrl;
 
+    @Builder.Default
+    private boolean enabled = true;
+
     @ManyToOne
     @JoinColumn(name = "location_id")
     @com.fasterxml.jackson.annotation.JsonIgnoreProperties({"parent", "children", "patients", "users"})

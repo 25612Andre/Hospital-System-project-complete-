@@ -5,6 +5,9 @@ import com.example.hospitalmanagement.model.Appointment;
 import com.example.hospitalmanagement.model.Bill;
 import com.example.hospitalmanagement.repository.AppointmentRepository;
 import com.example.hospitalmanagement.repository.BillingRepository;
+import com.example.hospitalmanagement.auth.service.AuditLogService;
+import com.example.hospitalmanagement.model.enums.AuditAction;
+import com.example.hospitalmanagement.model.enums.EntityType;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +27,7 @@ public class BillingService {
 
     private final BillingRepository billingRepository;
     private final AppointmentRepository appointmentRepository;
+    private final AuditLogService auditLogService;
 
     public List<Bill> getAll() {
         return billingRepository.findAll();
@@ -71,7 +75,10 @@ public class BillingService {
         bill.setAmount(amount);
         bill.setStatus("Pending");
         bill.setIssuedDate(LocalDateTime.now());
-        return billingRepository.save(bill);
+        Bill saved = billingRepository.save(bill);
+        auditLogService.logAction(EntityType.BILL, saved.getId(), AuditAction.CREATE, 
+            "Bill generated for appointment " + appointmentId + ". Amount: " + amount, "SYSTEM", null);
+        return saved;
     }
 
     @Transactional
@@ -81,7 +88,10 @@ public class BillingService {
              throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot modify a paid bill");
         }
         bill.setStatus(status);
-        return billingRepository.save(bill);
+        Bill saved = billingRepository.save(bill);
+        auditLogService.logAction(EntityType.BILL, saved.getId(), AuditAction.UPDATE, 
+            "Bill status updated to " + status, "USER", null);
+        return saved;
     }
 
     @Transactional
@@ -100,7 +110,10 @@ public class BillingService {
         if (request.getPaymentMethod() != null) {
             bill.setPaymentMethod(request.getPaymentMethod());
         }
-        return billingRepository.save(bill);
+        Bill saved = billingRepository.save(bill);
+        auditLogService.logAction(EntityType.BILL, saved.getId(), AuditAction.UPDATE, 
+            "Bill modified. New status: " + saved.getStatus() + ", Method: " + saved.getPaymentMethod(), "USER", null);
+        return saved;
     }
 
     @Transactional

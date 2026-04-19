@@ -11,6 +11,7 @@ import type { PagedResult } from "../../api/personApi";
 const emptyForm: Department = {
   name: "",
   consultationFee: 0,
+  educationalVideoUrl: "",
 };
 
 const DepartmentListPage: React.FC = () => {
@@ -61,7 +62,11 @@ const DepartmentListPage: React.FC = () => {
   };
 
   const handleEdit = (row: Department) => {
-    setForm({ name: row.name, consultationFee: row.consultationFee });
+    setForm({ 
+      name: row.name, 
+      consultationFee: row.consultationFee,
+      educationalVideoUrl: row.educationalVideoUrl || "" 
+    });
     setEditingId(row.id ?? null);
   };
 
@@ -121,6 +126,19 @@ const DepartmentListPage: React.FC = () => {
             step="0.01"
             required
           />
+        </div>
+        <div className="md:col-span-3">
+          <label className="block text-sm mb-1 font-medium">Educational Video URL (Youtube Embed Link)</label>
+          <input
+            type="url"
+            className="w-full border rounded px-3 py-2 placeholder:text-slate-400"
+            value={form.educationalVideoUrl || ""}
+            onChange={(e) => setForm({ ...form, educationalVideoUrl: e.target.value })}
+            placeholder="e.g. https://www.youtube.com/embed/XXXXXX"
+          />
+          <p className="text-[10px] text-slate-400 mt-1 italic">
+            This video will be shown to patients after booking an appointment in this department.
+          </p>
         </div>
         <div className="md:col-span-3 flex justify-end gap-2">
           {editingId && (

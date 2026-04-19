@@ -10,6 +10,7 @@ export interface UserAccount {
     location?: { id: number; name: string };
     patient?: { id: number; fullName: string };
     doctor?: { id: number; name: string };
+    enabled?: boolean;
 }
 
 export type UserProfileUpdatePayload = {
@@ -23,6 +24,7 @@ export type UserProfileUpdatePayload = {
     age?: number;
     locationId?: number;
     locationName?: string;
+    enabled?: boolean;
 };
 
 export const userApi = {

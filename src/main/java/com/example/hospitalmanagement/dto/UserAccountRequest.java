@@ -25,6 +25,7 @@ public class UserAccountRequest {
     private Long doctorId;
     private Long locationId;
     private Boolean twoFactorEnabled;
+    private Boolean enabled;
     
     // Patient Registration Fields
     private String fullName;

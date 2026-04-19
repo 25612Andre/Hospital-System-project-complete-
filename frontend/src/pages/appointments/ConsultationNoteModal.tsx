@@ -5,6 +5,8 @@ import AppButton from "../../components/common/AppButton";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import type { Appointment } from "../../api/appointmentApi";
 import { consultationNoteApi, type PrescriptionItemPayload } from "../../api/consultationNoteApi";
+import { personApi, type Person } from "../../api/personApi";
+import resolveBackendAssetUrl from "../../api/assetUrl";
 import { useI18n } from "../../i18n/I18nProvider";
 
 interface Props {
@@ -29,6 +31,12 @@ const ConsultationNoteModal: React.FC<Props> = ({ appointment, canEdit, onClose 
     queryKey: ["consultation-note", appointment.id],
     queryFn: () => consultationNoteApi.getOrNull(appointment.id),
     retry: false,
+  });
+  
+  const { data: fullPatient } = useQuery<Person>({
+    queryKey: ["patient-full", appointment.patient?.id],
+    queryFn: () => personApi.getById(Number(appointment.patient?.id)),
+    enabled: !!appointment.patient?.id,
   });
 
   const [observations, setObservations] = React.useState("");
@@ -272,6 +280,53 @@ const ConsultationNoteModal: React.FC<Props> = ({ appointment, canEdit, onClose 
         </div>
 
         <div className="p-6 overflow-y-auto flex-1 space-y-6 bg-slate-50/30">
+          {/* Patient Profile Header */}
+          {fullPatient && (
+            <div className="bg-white border border-indigo-100 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row gap-5 items-center md:items-start anim-fade-in">
+              <div className="w-24 h-24 rounded-2xl overflow-hidden bg-slate-100 border-2 border-slate-100 shadow-sm shrink-0">
+                {fullPatient.profilePictureUrl ? (
+                  <img 
+                    src={resolveBackendAssetUrl(fullPatient.profilePictureUrl)} 
+                    alt={fullPatient.fullName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-3xl font-bold text-indigo-300 bg-indigo-50">
+                    {fullPatient.fullName.charAt(0)}
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                <div className="sm:col-span-2">
+                  <span className="block text-slate-500 text-[10px] uppercase font-bold tracking-wider mb-1">
+                    {language === 'fr' ? 'Nom complet' : 'Full Name'}
+                  </span>
+                  <span className="text-lg font-bold text-slate-800">{fullPatient.fullName}</span>
+                </div>
+                <div>
+                  <span className="block text-slate-500 text-[10px] uppercase font-bold tracking-wider mb-1">
+                    {language === 'fr' ? 'Âge / Sexe' : 'Age / Gender'}
+                  </span>
+                  <span className="font-semibold text-slate-700">{fullPatient.age} ans • {fullPatient.gender}</span>
+                </div>
+                <div>
+                  <span className="block text-slate-500 text-[10px] uppercase font-bold tracking-wider mb-1">
+                    {language === 'fr' ? 'Contact' : 'Contact'}
+                  </span>
+                  <span className="font-semibold text-slate-700">{fullPatient.phone || fullPatient.email}</span>
+                </div>
+                <div className="sm:col-span-2 md:col-span-4 p-2 bg-slate-50 rounded-lg border border-slate-100">
+                  <span className="block text-slate-500 text-[10px] uppercase font-bold tracking-wider mb-1">
+                    {language === 'fr' ? 'Localisation' : 'Location'}
+                  </span>
+                  <span className="text-slate-600 font-medium">
+                    {fullPatient.location?.path || fullPatient.locationName || (language === 'fr' ? 'Non spécifié' : 'Not specified')}
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
           {isLoading ? (
             <div className="py-10">
               <LoadingSpinner label={t("common.loading")} />

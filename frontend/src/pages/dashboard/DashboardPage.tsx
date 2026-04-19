@@ -164,9 +164,29 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{title}</h1>
-        <p className="text-slate-500 mt-1">{subtitle}</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">{title}</h1>
+          <p className="text-slate-500 mt-1">{subtitle}</p>
+        </div>
+        
+        {/* Emergency Quick Access */}
+        <div className="flex shrink-0">
+          <a 
+            href="tel:0790802083" 
+            className="flex items-center gap-4 bg-red-50 border border-red-100 p-2 pr-6 rounded-2xl hover:shadow-lg hover:shadow-red-100/50 transition-all group active:scale-95"
+          >
+            <div className="p-3 bg-red-600 text-white rounded-xl shadow-lg shadow-red-200 group-hover:bg-red-700">
+               <svg className="w-5 h-5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+               </svg>
+            </div>
+            <div>
+               <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">{language === 'fr' ? 'URGENCE 24/7' : 'EMERGENCY 24/7'}</p>
+               <p className="text-lg font-black text-red-700 leading-none mt-0.5">0790802083</p>
+            </div>
+          </a>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">

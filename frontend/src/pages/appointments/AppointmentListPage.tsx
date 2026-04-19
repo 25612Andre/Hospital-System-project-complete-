@@ -112,17 +112,21 @@ const AppointmentListPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const selectedDate = new Date(form.appointmentDate);
-    const year = selectedDate.getFullYear();
-    if (isNaN(year) || year > 2100 || year < 1900) {
-      toast.error(t("appointments.toast.validYear"));
-      return;
-    }
-
     if (!form.doctorId || !form.patientId || !form.appointmentDate) {
       toast.error(t("appointments.toast.required"));
       return;
     }
+
+    const selectedDate = new Date(form.appointmentDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Start of today
+
+    if (selectedDate < today && !editingId) {
+       toast.error(language === 'fr' ? "La date du rendez-vous ne peut pas être dans le passé" : "Appointment date cannot be in the past");
+       return;
+    }
+
+    const year = selectedDate.getFullYear();
     let dateStr = form.appointmentDate;
     if (dateStr.length === 16) {
       dateStr += ":00";
@@ -164,7 +168,7 @@ const AppointmentListPage: React.FC = () => {
         
         if (isPatient) {
           const doctor = doctorOptions.find(d => String(d.id) === String(form.doctorId));
-          const spec = (doctor?.specialization || doctor?.department?.name || "").toLowerCase();
+          const spec = ((doctor?.specialization || "") + " " + (doctor?.department?.name || "")).toLowerCase();
           
           // Use dynamic video URLs if available
           let videoUrl = doctor?.videoUrl || doctor?.department?.educationalVideoUrl;
@@ -178,7 +182,7 @@ const AppointmentListPage: React.FC = () => {
               videoUrl = language === 'fr' 
                 ? "https://www.youtube.com/embed/JMYNkjhxy_I" 
                 : "https://www.youtube.com/embed/w2O5_klsuXc"; // Cardio
-            } else if (spec.includes("pediatr") || spec.includes("pédiatr")) {
+            } else if (spec.includes("pediatr") || spec.includes("pédiatr") || spec.includes("child") || spec.includes("enfant") || spec.includes("pedia")) {
               videoUrl = language === 'fr' 
                 ? "https://www.youtube.com/embed/st9qu2RyJLM" 
                 : "https://www.youtube.com/embed/ZKKNQ_lA1HQ"; // Ped

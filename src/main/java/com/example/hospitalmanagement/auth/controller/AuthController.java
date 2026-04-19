@@ -12,6 +12,9 @@ import com.example.hospitalmanagement.auth.service.UserAccountService;
 import com.example.hospitalmanagement.auth.service.VerificationService;
 import com.example.hospitalmanagement.dto.UserAccountRequest;
 import com.example.hospitalmanagement.model.UserAccount;
+import com.example.hospitalmanagement.auth.service.AuditLogService;
+import com.example.hospitalmanagement.model.enums.AuditAction;
+import com.example.hospitalmanagement.model.enums.EntityType;
 import com.example.hospitalmanagement.security.JwtService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -33,6 +36,7 @@ public class AuthController {
     private final MailService mailService;
     private final TwoFactorAuthService twoFactorAuthService;
     private final JwtService jwtService;
+    private final AuditLogService auditLogService;
 
     @Value("${app.auth.enforce-2fa:false}")
     private boolean enforce2fa;
@@ -64,6 +68,21 @@ public class AuthController {
         } catch (RuntimeException ex) {
             return ResponseEntity.status(401).build();
         }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout(@org.springframework.web.bind.annotation.RequestHeader(value = "Authorization", required = false) String token) {
+        String username = "UNKNOWN";
+        try {
+            if (token != null && token.startsWith("Bearer ")) {
+                username = jwtService.extractUsername(token.substring(7));
+            }
+        } catch (Exception ex) {}
+        
+        auditLogService.logAction(EntityType.USER_ACCOUNT, null, AuditAction.LOGOUT, 
+            "User logged out: " + username, username, null);
+            
+        return ResponseEntity.ok("Logged out");
     }
 
     @PostMapping("/forgot-password")
@@ -142,6 +161,11 @@ public class AuthController {
             auth.setPassword(request.getPassword());
             UserAccount ua = userAccountService.authenticate(auth);
             userAccountService.updateTwoFactor(ua, request.isEnable());
+            
+            auditLogService.logAction(EntityType.USER_ACCOUNT, ua.getId(), AuditAction.UPDATE, 
+                "Two-factor authentication " + (request.isEnable() ? "enabled" : "disabled") + " for " + ua.getUsername(),
+                ua.getUsername(), null);
+                
             String message = request.isEnable()
                     ? "Email-based verification enabled. Future logins will require the emailed OTP."
                     : "Two-factor authentication disabled for this user.";

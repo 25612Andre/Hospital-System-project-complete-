@@ -156,6 +156,11 @@ public class UserAccountService {
         UserAccount ua = findOptional(req.getUsername())
                 .filter(user -> passwordEncoder.matches(req.getPassword(), user.getPassword()))
                 .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+        
+        if (!ua.isEnabled()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Account is disabled. Please contact administrator.");
+        }
+
         Long patientId = ua.getPatient() != null ? ua.getPatient().getId() : null;
         Long doctorId = ua.getDoctor() != null ? ua.getDoctor().getId() : null;
         AuthResponse.UserInfo info = new AuthResponse.UserInfo(
@@ -167,13 +172,23 @@ public class UserAccountService {
                 ua.getProfilePictureUrl()
         );
         String token = jwtService.generateToken(ua);
+        
+        auditLogService.logAction(EntityType.USER_ACCOUNT, ua.getId(), AuditAction.LOGIN, 
+            "User logged in: " + ua.getUsername(), ua.getUsername(), null);
+            
         return new AuthResponse(token, info, false);
     }
 
     public UserAccount authenticate(AuthRequest req) {
-        return findOptional(req.getUsername())
+        UserAccount ua = findOptional(req.getUsername())
                 .filter(user -> passwordEncoder.matches(req.getPassword(), user.getPassword()))
                 .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+        
+        if (!ua.isEnabled()) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Account is disabled");
+        }
+        
+        return ua;
     }
 
     @org.springframework.transaction.annotation.Transactional
@@ -199,6 +214,9 @@ public class UserAccountService {
         ua.setRole(req.getRole());
         if (req.getTwoFactorEnabled() != null) {
             ua.setTwoFactorEnabled(req.getTwoFactorEnabled());
+        }
+        if (req.getEnabled() != null) {
+            ua.setEnabled(req.getEnabled());
         }
         if (profilePictureUrl != null && !profilePictureUrl.isBlank()) {
             ua.setProfilePictureUrl(profilePictureUrl);

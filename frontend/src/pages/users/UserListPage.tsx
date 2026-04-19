@@ -11,12 +11,13 @@ import { userApi, type UserAccount } from "../../api/userApi";
 const UserEditModal: React.FC<{ user: UserAccount; onClose: () => void; onSuccess: () => void }> = ({ user, onClose, onSuccess }) => {
   const [role, setRole] = useState(user.role);
   const [username, setUsername] = useState(user.username);
+  const [enabled, setEnabled] = useState(user.enabled ?? true);
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
     try {
-      await userApi.updateUser(user.id, { role, username });
+      await userApi.updateUser(user.id, { role, username, enabled });
       toast.success("User updated successfully");
       onSuccess();
       onClose();
@@ -55,6 +56,18 @@ const UserEditModal: React.FC<{ user: UserAccount; onClose: () => void; onSucces
               <option value="PATIENT">PATIENT</option>
               <option value="RECEPTIONIST">RECEPTIONIST</option>
             </select>
+          </div>
+          <div className="flex items-center gap-3 py-2">
+             <input 
+               type="checkbox" 
+               id="enabled-toggle" 
+               checked={enabled} 
+               onChange={e => setEnabled(e.target.checked)} 
+               className="w-4 h-4 text-blue-600 rounded"
+             />
+             <label htmlFor="enabled-toggle" className="text-sm font-medium text-slate-700 dark:text-gray-300 cursor-pointer">
+                Account Enabled (Login Allowed)
+             </label>
           </div>
         </div>
         <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/50 flex justify-end gap-3">
@@ -145,6 +158,17 @@ const UserListPage: React.FC = () => {
                 'bg-slate-100 text-slate-700'
               }`}>
                 {row.role}
+              </span>
+            )
+          },
+          {
+            key: "enabled",
+            header: "Status",
+            render: (row) => (
+              <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase ${
+                row.enabled === false ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'
+              }`}>
+                {row.enabled === false ? 'Disabled' : 'Enabled'}
               </span>
             )
           },

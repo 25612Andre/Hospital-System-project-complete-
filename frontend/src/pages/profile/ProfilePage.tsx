@@ -257,17 +257,20 @@ const ProfilePage: React.FC = () => {
                             <div>
                                 <label className="block text-sm font-medium text-slate-700">{t("signup.fullName")}</label>
                                 <input
-                                    className="w-full border rounded px-3 py-2 mt-1"
+                                    className="w-full border rounded px-3 py-2 mt-1 disabled:bg-slate-100 disabled:text-slate-500"
                                     value={formData.fullName}
                                     onChange={e => setFormData({ ...formData, fullName: e.target.value })}
+                                    disabled={user.role === 'PATIENT'}
                                 />
+                                {user.role === 'PATIENT' && <p className="text-[10px] text-slate-400 mt-1">{t("profile.contactAdminToUpdate") || "Contact administrator to update personal details"}</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700">{t("signup.phone")}</label>
                                 <input
-                                    className="w-full border rounded px-3 py-2 mt-1"
+                                    className="w-full border rounded px-3 py-2 mt-1 disabled:bg-slate-100 disabled:text-slate-500"
                                     value={formData.phone}
                                     onChange={e => setFormData({ ...formData, phone: e.target.value })}
+                                    disabled={user.role === 'PATIENT'}
                                 />
                             </div>
                         </>
@@ -292,17 +295,19 @@ const ProfilePage: React.FC = () => {
                                 <label className="block text-sm font-medium text-slate-700">{t("signup.age")}</label>
                                 <input
                                     type="number"
-                                    className="w-full border rounded px-3 py-2 mt-1"
+                                    className="w-full border rounded px-3 py-2 mt-1 disabled:bg-slate-100 disabled:text-slate-500"
                                     value={formData.age}
                                     onChange={e => setFormData({ ...formData, age: e.target.value })}
+                                    disabled={user.role === 'PATIENT'}
                                 />
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700">{t("signup.gender")}</label>
                                 <select
-                                    className="w-full border rounded px-3 py-2 mt-1"
+                                    className="w-full border rounded px-3 py-2 mt-1 disabled:bg-slate-100 disabled:text-slate-500"
                                     value={formData.gender}
                                     onChange={e => setFormData({ ...formData, gender: e.target.value })}
+                                    disabled={user.role === 'PATIENT'}
                                 >
                                     <option value="">{t("signup.gender.select")}</option>
                                     <option value="MALE">{t("signup.gender.male")}</option>
@@ -316,10 +321,11 @@ const ProfilePage: React.FC = () => {
                         <div>
                             <label className="block text-sm font-medium text-slate-700">{t("common.location")}</label>
                             <input
-                                className="w-full border rounded px-3 py-2 mt-1"
+                                className="w-full border rounded px-3 py-2 mt-1 disabled:bg-slate-100 disabled:text-slate-500"
                                 placeholder="Enter your city or area..."
                                 value={formData.locationName}
                                 onChange={e => setFormData({ ...formData, locationName: e.target.value })}
+                                disabled={user.role === 'PATIENT'}
                             />
                         </div>
 
@@ -372,7 +378,30 @@ const ProfilePage: React.FC = () => {
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-500">{t("profile.twoFactorAuthentication")}</label>
-                            <div className="mt-1 text-slate-900">{account?.twoFactorEnabled ? t("common.enabled") : t("common.disabled")}</div>
+                            <div className="mt-1 flex items-center gap-3">
+                                <span className={`text-sm font-semibold ${account?.twoFactorEnabled ? 'text-emerald-600' : 'text-slate-600'}`}>
+                                    {account?.twoFactorEnabled ? t("common.enabled") : t("common.disabled")}
+                                </span>
+                                <button
+                                    onClick={() => {
+                                        const enable = !account?.twoFactorEnabled;
+                                        if (window.confirm(enable ? "Enable 2FA? You will need a code from your email to login next time." : "Disable 2FA?")) {
+                                            const pass = window.prompt("Please confirm your password to change 2FA settings:");
+                                            if (pass) {
+                                                userApi.updateUser(user.id, { enabled, twoFactorEnabled: enable, password: pass })
+                                                    .then(() => {
+                                                        toast.success(enable ? "2FA Enabled" : "2FA Disabled");
+                                                        queryClient.invalidateQueries({ queryKey: ["my-user-profile"] });
+                                                    })
+                                                    .catch(err => toast.error("Verification failed"));
+                                            }
+                                        }
+                                    }}
+                                    className="text-xs text-indigo-600 hover:text-indigo-800 underline font-medium"
+                                >
+                                    {account?.twoFactorEnabled ? "Disable" : "Enable"}
+                                </button>
+                            </div>
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-slate-500">{t("common.location")}</label>
