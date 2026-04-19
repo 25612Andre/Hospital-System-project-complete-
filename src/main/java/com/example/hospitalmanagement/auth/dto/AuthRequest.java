@@ -14,4 +14,8 @@ public class AuthRequest {
 
     @NotBlank
     private String password;
+
+    public void setUsername(String username) {
+        this.username = username == null ? null : username.trim();
+    }
 }

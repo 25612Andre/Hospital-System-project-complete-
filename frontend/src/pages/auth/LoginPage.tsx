@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
 import { useAuth } from "../../context/useAuth";
 import AppButton from "../../components/common/AppButton";
 import { toast } from "react-toastify";
@@ -20,15 +21,21 @@ const LoginPage: React.FC = () => {
     setSubmitting(true);
     setError(null);
     try {
-      const result = await login({ username, password });
+      const result = await login({ username: username.trim(), password });
       if (result === "2FA") {
         toast.info(t("auth.twoFaRequired"));
         return navigate("/2fa");
       }
       navigate("/");
-    } catch {
-      setError(t("auth.loginFailed"));
-      toast.error(t("auth.loginFailed"));
+    } catch (error) {
+      const backendMessage = axios.isAxiosError(error)
+        ? typeof error.response?.data === "string"
+          ? error.response.data
+          : error.response?.data?.message
+        : undefined;
+      const message = backendMessage || t("auth.loginFailed");
+      setError(message);
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }

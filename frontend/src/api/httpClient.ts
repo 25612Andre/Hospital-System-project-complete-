@@ -30,12 +30,18 @@ httpClient.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error?.response?.status;
+    const requestUrl = String(error?.config?.url || "");
+    const isAuthFlowRequest =
+      requestUrl.includes("/auth/login") ||
+      requestUrl.includes("/auth/2fa/verify") ||
+      requestUrl.includes("/auth/2fa/send") ||
+      requestUrl.includes("/auth/2fa/setup");
     const message =
       error?.response?.data?.message ||
       error?.response?.data ||
       error?.message ||
       tStatic("errors.backendUnavailable");
-    if (status === 401 || status === 403) {
+    if ((status === 401 || status === 403) && !isAuthFlowRequest) {
       toast.error(tStatic("errors.sessionExpired"));
       localStorage.removeItem("auth_token");
       localStorage.removeItem("auth_user");

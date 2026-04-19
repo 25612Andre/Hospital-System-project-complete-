@@ -46,38 +46,34 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
-        try {
-            UserAccount ua = userAccountService.authenticate(request);
-            Long patientId = ua.getPatient() != null ? ua.getPatient().getId() : null;
-            Long doctorId = ua.getDoctor() != null ? ua.getDoctor().getId() : null;
-            AuthResponse.UserInfo info = new AuthResponse.UserInfo(
+        UserAccount ua = userAccountService.authenticate(request);
+        Long patientId = ua.getPatient() != null ? ua.getPatient().getId() : null;
+        Long doctorId = ua.getDoctor() != null ? ua.getDoctor().getId() : null;
+        AuthResponse.UserInfo info = new AuthResponse.UserInfo(
+                ua.getId(),
+                ua.getUsername(),
+                ua.getRole(),
+                patientId,
+                doctorId,
+                ua.getProfilePictureUrl()
+        );
+        boolean requiresTwoFactor = enforce2fa || ua.isTwoFactorEnabled();
+        if (!requiresTwoFactor) {
+            String token = jwtService.generateToken(ua);
+            auditLogService.logActionAsUser(
+                    EntityType.USER_ACCOUNT,
                     ua.getId(),
+                    AuditAction.LOGIN,
+                    "User logged in: " + ua.getUsername(),
+                    null,
+                    null,
                     ua.getUsername(),
-                    ua.getRole(),
-                    patientId,
-                    doctorId,
-                    ua.getProfilePictureUrl()
+                    ua.getId()
             );
-            boolean requiresTwoFactor = enforce2fa || ua.isTwoFactorEnabled();
-            if (!requiresTwoFactor) {
-                String token = jwtService.generateToken(ua);
-                auditLogService.logActionAsUser(
-                        EntityType.USER_ACCOUNT,
-                        ua.getId(),
-                        AuditAction.LOGIN,
-                        "User logged in: " + ua.getUsername(),
-                        null,
-                        null,
-                        ua.getUsername(),
-                        ua.getId()
-                );
-                return ResponseEntity.ok(new AuthResponse(token, info, false));
-            }
-            String code = twoFactorAuthService.dispatchCode(ua);
-            return ResponseEntity.ok(new AuthResponse(return2faCode ? code : "", info, true));
-        } catch (RuntimeException ex) {
-            return ResponseEntity.status(401).build();
+            return ResponseEntity.ok(new AuthResponse(token, info, false));
         }
+        String code = twoFactorAuthService.dispatchCode(ua);
+        return ResponseEntity.ok(new AuthResponse(return2faCode ? code : "", info, true));
     }
 
     @PostMapping("/logout")
@@ -150,59 +146,51 @@ public class AuthController {
 
     @PostMapping("/2fa/verify")
     public ResponseEntity<AuthResponse> verify2fa(@Valid @RequestBody TwoFactorRequest request) {
-        try {
-            UserAccount ua = userAccountService.findByUsername(request.getUsername());
-            boolean ok = twoFactorAuthService.verifyCode(ua.getUsername(), request.getCode());
-            if (!ok) {
-                return ResponseEntity.status(401).build();
-            }
-            Long patientId = ua.getPatient() != null ? ua.getPatient().getId() : null;
-            Long doctorId = ua.getDoctor() != null ? ua.getDoctor().getId() : null;
-            String token = jwtService.generateToken(ua);
-            auditLogService.logActionAsUser(
-                    EntityType.USER_ACCOUNT,
-                    ua.getId(),
-                    AuditAction.LOGIN,
-                    "User logged in with 2FA: " + ua.getUsername(),
-                    null,
-                    null,
-                    ua.getUsername(),
-                    ua.getId()
-            );
-            return ResponseEntity.ok(new AuthResponse(token,
-                    new AuthResponse.UserInfo(
-                            ua.getId(),
-                            ua.getUsername(),
-                            ua.getRole(),
-                            patientId,
-                            doctorId,
-                            ua.getProfilePictureUrl()
-                    ), false));
-        } catch (RuntimeException ex) {
+        UserAccount ua = userAccountService.findByUsername(request.getUsername());
+        boolean ok = twoFactorAuthService.verifyCode(ua.getUsername(), request.getCode());
+        if (!ok) {
             return ResponseEntity.status(401).build();
         }
+        Long patientId = ua.getPatient() != null ? ua.getPatient().getId() : null;
+        Long doctorId = ua.getDoctor() != null ? ua.getDoctor().getId() : null;
+        String token = jwtService.generateToken(ua);
+        auditLogService.logActionAsUser(
+                EntityType.USER_ACCOUNT,
+                ua.getId(),
+                AuditAction.LOGIN,
+                "User logged in with 2FA: " + ua.getUsername(),
+                null,
+                null,
+                ua.getUsername(),
+                ua.getId()
+        );
+        return ResponseEntity.ok(new AuthResponse(token,
+                new AuthResponse.UserInfo(
+                        ua.getId(),
+                        ua.getUsername(),
+                        ua.getRole(),
+                        patientId,
+                        doctorId,
+                        ua.getProfilePictureUrl()
+                ), false));
     }
 
     @PostMapping("/2fa/setup")
     public ResponseEntity<TwoFactorSetupResponse> setup2fa(@Valid @RequestBody TwoFactorSetupRequest request) {
-        try {
-            AuthRequest auth = new AuthRequest();
-            auth.setUsername(request.getUsername());
-            auth.setPassword(request.getPassword());
-            UserAccount ua = userAccountService.authenticate(auth);
-            userAccountService.updateTwoFactor(ua, request.isEnable());
+        AuthRequest auth = new AuthRequest();
+        auth.setUsername(request.getUsername());
+        auth.setPassword(request.getPassword());
+        UserAccount ua = userAccountService.authenticate(auth);
+        userAccountService.updateTwoFactor(ua, request.isEnable());
+        
+        auditLogService.logAction(EntityType.USER_ACCOUNT, ua.getId(), AuditAction.UPDATE, 
+            "Two-factor authentication " + (request.isEnable() ? "enabled" : "disabled") + " for " + ua.getUsername(),
+            ua.getUsername(), null);
             
-            auditLogService.logAction(EntityType.USER_ACCOUNT, ua.getId(), AuditAction.UPDATE, 
-                "Two-factor authentication " + (request.isEnable() ? "enabled" : "disabled") + " for " + ua.getUsername(),
-                ua.getUsername(), null);
-                
-            String message = request.isEnable()
-                    ? "Email-based verification enabled. Future logins will require the emailed OTP."
-                    : "Two-factor authentication disabled for this user.";
-            return ResponseEntity.ok(new TwoFactorSetupResponse(ua.isTwoFactorEnabled(), "EMAIL", message));
-        } catch (RuntimeException ex) {
-            return ResponseEntity.status(401).build();
-        }
+        String message = request.isEnable()
+                ? "Email-based verification enabled. Future logins will require the emailed OTP."
+                : "Two-factor authentication disabled for this user.";
+        return ResponseEntity.ok(new TwoFactorSetupResponse(ua.isTwoFactorEnabled(), "EMAIL", message));
     }
 
     @PostMapping(value = "/signup", consumes = {"multipart/form-data"})

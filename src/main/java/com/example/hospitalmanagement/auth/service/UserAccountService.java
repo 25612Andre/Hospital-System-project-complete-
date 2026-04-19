@@ -145,7 +145,10 @@ public class UserAccountService {
     }
 
     public Optional<UserAccount> findOptional(String username) {
-        return userAccountRepository.findByUsernameIgnoreCase(username);
+        if (username == null) {
+            return Optional.empty();
+        }
+        return userAccountRepository.findByUsernameIgnoreCase(username.trim());
     }
 
     public UserAccount findByUsername(String username) {
@@ -153,9 +156,10 @@ public class UserAccountService {
     }
 
     public AuthResponse login(AuthRequest req) {
-        UserAccount ua = findOptional(req.getUsername())
+        String normalizedUsername = req.getUsername() == null ? null : req.getUsername().trim();
+        UserAccount ua = findOptional(normalizedUsername)
                 .filter(user -> passwordEncoder.matches(req.getPassword(), user.getPassword()))
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
         
         if (!ua.isEnabled()) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Account is disabled. Please contact administrator.");
@@ -188,12 +192,13 @@ public class UserAccountService {
     }
 
     public UserAccount authenticate(AuthRequest req) {
-        UserAccount ua = findOptional(req.getUsername())
+        String normalizedUsername = req.getUsername() == null ? null : req.getUsername().trim();
+        UserAccount ua = findOptional(normalizedUsername)
                 .filter(user -> passwordEncoder.matches(req.getPassword(), user.getPassword()))
-                .orElseThrow(() -> new RuntimeException("Invalid credentials"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials"));
         
         if (!ua.isEnabled()) {
-            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Account is disabled");
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Account is disabled. Please contact administrator.");
         }
         
         return ua;

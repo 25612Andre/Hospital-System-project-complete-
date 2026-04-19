@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -40,7 +41,12 @@ Use the verification code %s to finish signing in. The code expires in %d minute
 
 If you did not initiate this request you can ignore this email.
 """.formatted(entry.code, CODE_TTL.toMinutes());
-        mailService.send(username, subject, body);
+        try {
+            mailService.send(username, subject, body);
+        } catch (ResponseStatusException ex) {
+            pendingCodes.remove(normalized);
+            throw ex;
+        }
         return entry.code;
     }
 
