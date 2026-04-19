@@ -15,12 +15,13 @@ export interface Appointment {
   appointmentDate: string;
   status: string;
   consultationFee: number;
-  doctor?: { id: number; name: string };
+  notes?: string;
+  doctor?: { id: number; name: string; specialization?: string };
   patient?: { id: number; fullName?: string };
 }
 
 export const appointmentApi = {
-  listPage: async (params?: { page?: number; size?: number; sort?: string; q?: string }) => {
+  listPage: async (params?: { page?: number; size?: number; sort?: string; q?: string; patientId?: number; doctorId?: number }) => {
     const { data } = await httpClient.get<PagedResult<Appointment>>(params?.q ? "/appointments/search" : "/appointments/page", {
       params: params?.q ? { q: params.q, page: params.page, size: params.size, sort: params.sort } : params,
     });

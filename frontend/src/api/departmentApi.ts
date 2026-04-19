@@ -5,6 +5,7 @@ export interface Department {
   id?: number;
   name: string;
   consultationFee: number;
+  educationalVideoUrl?: string;
 }
 
 export const departmentApi = {
