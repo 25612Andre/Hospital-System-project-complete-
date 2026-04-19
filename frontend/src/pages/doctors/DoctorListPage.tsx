@@ -18,6 +18,7 @@ const emptyForm: Doctor = {
   name: "",
   contact: "",
   specialization: "",
+  biography: "",
   department: undefined,
   location: undefined,
   locationName: "",
@@ -94,6 +95,7 @@ const DoctorListPage: React.FC = () => {
           fullName: form.name,
           phone: form.contact,
           specialization: form.specialization,
+          biography: form.biography,
           departmentId: form.department.id,
           locationName: form.locationName
         }, profilePicture || undefined);
@@ -114,6 +116,7 @@ const DoctorListPage: React.FC = () => {
       name: doc.name,
       contact: doc.contact,
       specialization: doc.specialization,
+      biography: doc.biography || "",
       department: doc.department ? { id: doc.department.id, name: doc.department.name } : undefined,
       location: doc.location ? { id: doc.location.id } : undefined,
       locationName: doc.location?.name || "",
@@ -276,6 +279,15 @@ const DoctorListPage: React.FC = () => {
               value={form.specialization}
               onChange={(e) => setForm({ ...form, specialization: e.target.value })}
               required
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm mb-1">{t("common.biography")}</label>
+            <textarea
+              className="w-full border rounded px-3 py-2"
+              rows={4}
+              value={form.biography || ""}
+              onChange={(e) => setForm({ ...form, biography: e.target.value })}
             />
           </div>
           <div>

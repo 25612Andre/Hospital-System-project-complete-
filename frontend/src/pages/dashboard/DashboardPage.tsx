@@ -1,7 +1,9 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "react-router-dom";
 import { dashboardApi } from "../../api/dashboardApi";
 import type { DashboardSummary } from "../../api/dashboardApi";
+import { personApi, type Person, type PagedResult } from "../../api/personApi";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import AppButton from "../../components/common/AppButton";
 import { toast } from "react-toastify";
@@ -20,6 +22,12 @@ const DashboardPage: React.FC = () => {
   const isAdmin = roles.includes("ADMIN");
   const isDoctor = roles.includes("DOCTOR");
   const isPatient = roles.includes("PATIENT");
+  const { data: doctorPatients } = useQuery<PagedResult<Person>>({
+    queryKey: ["dashboard-doctor-patients"],
+    queryFn: () => personApi.list({ page: 0, size: 6, sort: "fullName,asc" }),
+    enabled: isDoctor,
+    retry: 1,
+  });
 
   React.useEffect(() => {
     if (isError) toast.error(t("dashboard.error.loadFailedToast"));
@@ -182,7 +190,7 @@ const DashboardPage: React.FC = () => {
                </svg>
             </div>
             <div>
-               <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">{language === 'fr' ? 'URGENCE 24/7' : 'EMERGENCY 24/7'}</p>
+               <p className="text-[10px] font-bold text-red-500 uppercase tracking-widest">{t("common.emergency247")}</p>
                <p className="text-lg font-black text-red-700 leading-none mt-0.5">0790802083</p>
             </div>
           </a>
@@ -217,6 +225,45 @@ const DashboardPage: React.FC = () => {
           );
         })}
       </div>
+
+      {isDoctor && (
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="mb-4">
+            <h2 className="text-xl font-bold text-slate-900">{t("dashboard.doctorPatients.title")}</h2>
+            <p className="mt-1 text-sm text-slate-500">{t("dashboard.doctorPatients.subtitle")}</p>
+          </div>
+          {!doctorPatients?.content?.length ? (
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+              {t("dashboard.doctorPatients.noPatients")}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {doctorPatients.content.map((patient) => (
+                <div key={patient.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-base font-semibold text-slate-900">{patient.fullName}</p>
+                      <p className="mt-1 text-sm text-slate-500">{patient.email}</p>
+                    </div>
+                    {patient.id ? (
+                      <Link
+                        to={`/patients/${patient.id}`}
+                        className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-colors hover:border-slate-300 hover:bg-slate-100"
+                      >
+                        {t("dashboard.doctorPatients.viewFile")}
+                      </Link>
+                    ) : null}
+                  </div>
+                  <div className="mt-4 space-y-1 text-sm text-slate-600">
+                    <p>{patient.phone || t("common.na")}</p>
+                    <p>{patient.location?.path || patient.location?.name || patient.locationName || t("common.na")}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 };

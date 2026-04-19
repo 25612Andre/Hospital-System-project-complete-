@@ -19,7 +19,7 @@ public class UserAccountRequest {
     private String password;
 
     @NotNull
-    private Role role;
+    private Role role = Role.PATIENT;
 
     private Long patientId;
     private Long doctorId;
@@ -36,5 +36,6 @@ public class UserAccountRequest {
     // Doctor Registration Fields
     private Long departmentId;
     private String specialization;
+    private String biography;
     private String locationName;
 }

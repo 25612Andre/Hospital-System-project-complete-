@@ -20,6 +20,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -32,6 +34,9 @@ import java.util.stream.Collectors;
 @Slf4j
 public class AuditLogService {
 
+    private static final Long SYSTEM_USER_ID = 0L;
+    private static final String SYSTEM_USERNAME = "system";
+
     private final AuditLogRepository auditLogRepository;
     private final UserAccountRepository userAccountRepository;
     private final ObjectMapper objectMapper;
@@ -41,18 +46,14 @@ public class AuditLogService {
      */
     @Transactional
     public AuditLogDTO createAuditLog(CreateAuditLogRequest request, HttpServletRequest httpRequest) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = auth != null ? auth.getName() : "system";
-        
-        UserAccount user = userAccountRepository.findByUsername(username)
-            .orElseThrow(() -> new RuntimeException("User not found: " + username));
+        ActorContext actor = resolveActor();
 
         AuditLog auditLog = new AuditLog();
         auditLog.setEntityType(request.getEntityType());
-        auditLog.setEntityId(request.getEntityId());
+        auditLog.setEntityId(resolveEntityId(request.getEntityId(), actor.userId()));
         auditLog.setAction(request.getAction());
-        auditLog.setPerformedBy(username);
-        auditLog.setPerformedByUserId(user.getId());
+        auditLog.setPerformedBy(actor.username());
+        auditLog.setPerformedByUserId(actor.userId());
         auditLog.setReason(request.getReason());
         auditLog.setOldValue(request.getOldValue());
         auditLog.setNewValue(request.getNewValue());
@@ -62,7 +63,7 @@ public class AuditLogService {
 
         auditLog = auditLogRepository.save(auditLog);
         log.info("Audit log created: {} {} on {} #{} by {}", 
-            request.getAction(), request.getEntityType(), request.getEntityType(), request.getEntityId(), username);
+            request.getAction(), request.getEntityType(), request.getEntityType(), auditLog.getEntityId(), actor.username());
         
         return convertToDTO(auditLog);
     }
@@ -73,32 +74,32 @@ public class AuditLogService {
     @Transactional
     public void logAction(EntityType entityType, Long entityId, AuditAction action, 
                          String reason, Object oldValue, Object newValue) {
-        try {
-            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-            String username = auth != null ? auth.getName() : "system";
-            
-            UserAccount user = userAccountRepository.findByUsername(username).orElse(null);
-            if (user == null) {
-                log.warn("Cannot create audit log: user not found");
-                return;
-            }
+        ActorContext actor = resolveActor();
+        logActionAsUser(entityType, entityId, action, reason, oldValue, newValue, actor.username(), actor.userId());
+    }
 
+    @Transactional
+    public void logActionAsUser(EntityType entityType, Long entityId, AuditAction action,
+                                String reason, Object oldValue, Object newValue,
+                                String performedBy, Long performedByUserId) {
+        try {
             String oldValueJson = oldValue != null ? objectMapper.writeValueAsString(oldValue) : null;
             String newValueJson = newValue != null ? objectMapper.writeValueAsString(newValue) : null;
 
             AuditLog auditLog = new AuditLog();
             auditLog.setEntityType(entityType);
-            auditLog.setEntityId(entityId);
+            auditLog.setEntityId(resolveEntityId(entityId, performedByUserId));
             auditLog.setAction(action);
-            auditLog.setPerformedBy(username);
-            auditLog.setPerformedByUserId(user.getId());
+            auditLog.setPerformedBy(normalizeUsername(performedBy));
+            auditLog.setPerformedByUserId(normalizeUserId(performedByUserId));
             auditLog.setReason(reason);
             auditLog.setOldValue(oldValueJson);
             auditLog.setNewValue(newValueJson);
             auditLog.setTimestamp(LocalDateTime.now());
+            auditLog.setIpAddress(resolveCurrentIpAddress());
 
             auditLogRepository.save(auditLog);
-            log.debug("Audit log created: {} {} on {} #{}", action, entityType, entityType, entityId);
+            log.debug("Audit log created: {} {} on {} #{}", action, entityType, entityType, auditLog.getEntityId());
         } catch (JsonProcessingException e) {
             log.error("Error serializing audit log values", e);
         } catch (Exception e) {
@@ -227,4 +228,43 @@ public class AuditLogService {
 
         return request.getRemoteAddr();
     }
+
+    private String resolveCurrentIpAddress() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes == null) {
+            return null;
+        }
+        return getClientIpAddress(attributes.getRequest());
+    }
+
+    private ActorContext resolveActor() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth != null ? auth.getName() : SYSTEM_USERNAME;
+        String normalizedUsername = normalizeUsername(username);
+        UserAccount user = userAccountRepository.findByUsernameIgnoreCase(normalizedUsername).orElse(null);
+        if (user != null) {
+            return new ActorContext(user.getUsername(), user.getId());
+        }
+        return new ActorContext(normalizedUsername, SYSTEM_USER_ID);
+    }
+
+    private String normalizeUsername(String username) {
+        if (username == null || username.isBlank() || "anonymousUser".equalsIgnoreCase(username)) {
+            return SYSTEM_USERNAME;
+        }
+        return username;
+    }
+
+    private Long normalizeUserId(Long userId) {
+        return userId != null ? userId : SYSTEM_USER_ID;
+    }
+
+    private Long resolveEntityId(Long entityId, Long actorUserId) {
+        if (entityId != null) {
+            return entityId;
+        }
+        return normalizeUserId(actorUserId);
+    }
+
+    private record ActorContext(String username, Long userId) {}
 }

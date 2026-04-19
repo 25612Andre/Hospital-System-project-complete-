@@ -8,8 +8,14 @@ import SearchInput from "../../components/common/SearchInput";
 import AppButton from "../../components/common/AppButton";
 import type { PagedResult } from "../../api/personApi";
 import { userApi, type UserAccount } from "../../api/userApi";
+import { useAuth } from "../../context/useAuth";
 
-const UserEditModal: React.FC<{ user: UserAccount; onClose: () => void; onSuccess: () => void }> = ({ user, onClose, onSuccess }) => {
+const UserEditModal: React.FC<{
+  user: UserAccount;
+  onClose: () => void;
+  onSuccess: () => void;
+  onUpdated: (updated: UserAccount) => void;
+}> = ({ user, onClose, onSuccess, onUpdated }) => {
   const [role, setRole] = useState(user.role);
   const [username, setUsername] = useState(user.username);
   const [enabled, setEnabled] = useState(user.enabled ?? true);
@@ -18,7 +24,8 @@ const UserEditModal: React.FC<{ user: UserAccount; onClose: () => void; onSucces
   const handleSave = async () => {
     setSaving(true);
     try {
-      await userApi.updateUser(user.id, { role, username, enabled });
+      const updated = await userApi.updateUser(user.id, { role, username, enabled });
+      onUpdated(updated);
       toast.success("User updated successfully");
       onSuccess();
       onClose();
@@ -86,6 +93,7 @@ const UserListPage: React.FC = () => {
   const [size] = useState(10);
   const [editingUser, setEditingUser] = useState<UserAccount | null>(null);
   const queryClient = useQueryClient();
+  const { user, updateUser } = useAuth();
 
   const { data: users, isLoading, isError, refetch } = useQuery<PagedResult<UserAccount>>({
     queryKey: ["users", page, term],
@@ -99,8 +107,24 @@ const UserListPage: React.FC = () => {
       await userApi.remove(id);
       toast.success("User deleted");
       queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
     } catch {
       toast.error("Failed to delete user");
+    }
+  };
+
+  const handleUserUpdated = (updated: UserAccount) => {
+    queryClient.invalidateQueries({ queryKey: ["users"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-summary"] });
+    queryClient.invalidateQueries({ queryKey: ["my-user-profile"] });
+    if (user?.id === updated.id) {
+      updateUser({
+        username: updated.username,
+        role: updated.role,
+        profilePictureUrl: updated.profilePictureUrl,
+        patientId: updated.patient?.id,
+        doctorId: updated.doctor?.id,
+      });
     }
   };
 
@@ -127,6 +151,7 @@ const UserListPage: React.FC = () => {
           user={editingUser}
           onClose={() => setEditingUser(null)}
           onSuccess={() => queryClient.invalidateQueries({ queryKey: ["users"] })}
+          onUpdated={handleUserUpdated}
         />
       )}
       <div className="flex items-center justify-between flex-wrap gap-3">

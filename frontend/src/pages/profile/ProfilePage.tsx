@@ -25,6 +25,7 @@ const ProfilePage: React.FC = () => {
         fullName: "",
         phone: "",
         specialization: "",
+        biography: "",
         age: "",
         gender: "",
         locationName: ""
@@ -107,6 +108,7 @@ const ProfilePage: React.FC = () => {
             fullName: patient?.fullName || doctor?.name || "",
             phone: patient?.phone || doctor?.contact || "",
             specialization: doctor?.specialization || "",
+            biography: doctor?.biography || "",
             age: patient?.age ? String(patient.age) : "",
             gender: patient?.gender || "",
             locationName: patient?.location?.name || doctor?.location?.name || account?.location?.name || "",
@@ -133,6 +135,7 @@ const ProfilePage: React.FC = () => {
                 if (formData.fullName.trim()) payload.fullName = formData.fullName.trim();
                 if (formData.phone.trim()) payload.phone = formData.phone.trim();
                 if (formData.specialization.trim()) payload.specialization = formData.specialization.trim();
+                payload.biography = formData.biography.trim();
             }
             
             if (formData.locationName.trim()) {
@@ -301,14 +304,26 @@ const ProfilePage: React.FC = () => {
 
                     {/* Doctor Specific */}
                     {user.role === 'DOCTOR' && (
-                        <div>
-                            <label className="block text-sm font-medium text-slate-700">{t("common.specialization")}</label>
-                            <input
-                                className="w-full border rounded px-3 py-2 mt-1"
-                                value={formData.specialization}
-                                onChange={e => setFormData({ ...formData, specialization: e.target.value })}
-                            />
-                        </div>
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700">{t("common.specialization")}</label>
+                                <input
+                                    className="w-full border rounded px-3 py-2 mt-1"
+                                    value={formData.specialization}
+                                    onChange={e => setFormData({ ...formData, specialization: e.target.value })}
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700">{t("profile.doctorBiography")}</label>
+                                <textarea
+                                    className="w-full border rounded px-3 py-2 mt-1"
+                                    rows={4}
+                                    placeholder={t("profile.doctorBiographyPlaceholder")}
+                                    value={formData.biography}
+                                    onChange={e => setFormData({ ...formData, biography: e.target.value })}
+                                />
+                            </div>
+                        </>
                     )}
 
                     {/* Patient Specific */}
@@ -471,6 +486,10 @@ const ProfilePage: React.FC = () => {
                                 <div>
                                     <label className="block text-sm font-medium text-slate-500">{t("common.department")}</label>
                                     <div className="mt-1 text-slate-900">{doctor.department?.name || t("common.na")}</div>
+                                </div>
+                                <div className="md:col-span-2">
+                                    <label className="block text-sm font-medium text-slate-500">{t("profile.doctorBiography")}</label>
+                                    <div className="mt-1 whitespace-pre-line text-slate-900">{doctor.biography || t("common.na")}</div>
                                 </div>
                                 <div className="md:col-span-2">
                                     <label className="block text-sm font-medium text-slate-500">{t("profile.doctorLocation")}</label>

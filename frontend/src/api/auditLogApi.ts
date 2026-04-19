@@ -21,6 +21,7 @@ export const AuditAction = {
     REJECT: "REJECT",
     LOGIN: "LOGIN",
     LOGOUT: "LOGOUT",
+    PAYMENT: "PAYMENT",
 } as const;
 
 export type AuditAction = typeof AuditAction[keyof typeof AuditAction];

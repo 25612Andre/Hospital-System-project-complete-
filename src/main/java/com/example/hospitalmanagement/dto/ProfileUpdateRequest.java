@@ -10,6 +10,7 @@ public class ProfileUpdateRequest {
     private String fullName;
     private String phone;
     private String specialization;
+    private String biography;
     private String gender;
     private Integer age;
     private Long locationId;

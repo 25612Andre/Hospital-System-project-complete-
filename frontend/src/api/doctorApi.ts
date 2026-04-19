@@ -6,6 +6,7 @@ export interface Doctor {
   name: string;
   contact: string;
   specialization: string;
+  biography?: string;
   profilePictureUrl?: string;
   videoUrl?: string;
   department?: {

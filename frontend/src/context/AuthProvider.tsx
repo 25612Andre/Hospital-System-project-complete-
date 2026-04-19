@@ -75,6 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = () => {
+    void authApi.logout().catch(() => undefined);
     setUser(null);
     setToken(null);
     setRequires2fa(false);

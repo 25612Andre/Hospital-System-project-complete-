@@ -173,8 +173,16 @@ public class UserAccountService {
         );
         String token = jwtService.generateToken(ua);
         
-        auditLogService.logAction(EntityType.USER_ACCOUNT, ua.getId(), AuditAction.LOGIN, 
-            "User logged in: " + ua.getUsername(), ua.getUsername(), null);
+        auditLogService.logActionAsUser(
+            EntityType.USER_ACCOUNT,
+            ua.getId(),
+            AuditAction.LOGIN,
+            "User logged in: " + ua.getUsername(),
+            null,
+            null,
+            ua.getUsername(),
+            ua.getId()
+        );
             
         return new AuthResponse(token, info, false);
     }
@@ -310,6 +318,7 @@ public class UserAccountService {
             if (hasText(req.getFullName())) doctor.setName(req.getFullName().trim());
             if (hasText(req.getPhone())) doctor.setContact(req.getPhone().trim());
             if (hasText(req.getSpecialization())) doctor.setSpecialization(req.getSpecialization().trim());
+            if (req.getBiography() != null) doctor.setBiography(req.getBiography().trim());
         }
 
         Location resolvedLocation = null;
@@ -465,8 +474,9 @@ public class UserAccountService {
                 newDoctor.setName(req.getFullName());
                 newDoctor.setContact(req.getPhone());
                 newDoctor.setSpecialization(req.getSpecialization() != null ? req.getSpecialization() : department.getName());
+                newDoctor.setBiography(req.getBiography());
                 newDoctor.setDepartment(department);
-                newDoctor.setLocation(doctorLocation);
+                newDoctor.setLocation(doctorLocation != null ? doctorLocation : location);
                 newDoctor.setProfilePictureUrl(profilePictureUrl);
 
                 Doctor saved = doctorService.save(newDoctor);

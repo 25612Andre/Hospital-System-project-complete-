@@ -84,6 +84,7 @@ public class BillingService {
     @Transactional
     public Bill updateStatus(@NonNull Long id, @NonNull String status) {
         Bill bill = getById(id);
+        String previousStatus = bill.getStatus();
         if ("Paid".equalsIgnoreCase(bill.getStatus())) {
              throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot modify a paid bill");
         }
@@ -91,12 +92,30 @@ public class BillingService {
         Bill saved = billingRepository.save(bill);
         auditLogService.logAction(EntityType.BILL, saved.getId(), AuditAction.UPDATE, 
             "Bill status updated to " + status, "USER", null);
+        if (!"Paid".equalsIgnoreCase(previousStatus) && "Paid".equalsIgnoreCase(saved.getStatus())) {
+            auditLogService.logAction(
+                EntityType.BILL,
+                saved.getId(),
+                AuditAction.PAYMENT,
+                "Bill paid. Method: " + (saved.getPaymentMethod() == null ? "unspecified" : saved.getPaymentMethod()),
+                null,
+                saved
+            );
+        }
         return saved;
     }
 
     @Transactional
     public Bill update(@NonNull Long id, @NonNull BillUpdateRequest request) {
         Bill bill = getById(id);
+        Bill oldState = Bill.builder()
+                .id(bill.getId())
+                .amount(bill.getAmount())
+                .appointment(bill.getAppointment())
+                .issuedDate(bill.getIssuedDate())
+                .status(bill.getStatus())
+                .paymentMethod(bill.getPaymentMethod())
+                .build();
         if ("Paid".equalsIgnoreCase(bill.getStatus())) {
              throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot modify a paid bill");
         }
@@ -112,7 +131,17 @@ public class BillingService {
         }
         Bill saved = billingRepository.save(bill);
         auditLogService.logAction(EntityType.BILL, saved.getId(), AuditAction.UPDATE, 
-            "Bill modified. New status: " + saved.getStatus() + ", Method: " + saved.getPaymentMethod(), "USER", null);
+            "Bill modified. New status: " + saved.getStatus() + ", Method: " + saved.getPaymentMethod(), oldState, saved);
+        if (!"Paid".equalsIgnoreCase(oldState.getStatus()) && "Paid".equalsIgnoreCase(saved.getStatus())) {
+            auditLogService.logAction(
+                EntityType.BILL,
+                saved.getId(),
+                AuditAction.PAYMENT,
+                "Bill paid via " + (saved.getPaymentMethod() == null ? "unspecified method" : saved.getPaymentMethod()),
+                oldState,
+                saved
+            );
+        }
         return saved;
     }
 
@@ -122,6 +151,14 @@ public class BillingService {
         if ("Paid".equalsIgnoreCase(bill.getStatus())) {
              throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete a paid bill");
         }
+        auditLogService.logAction(
+            EntityType.BILL,
+            id,
+            AuditAction.DELETE,
+            "Bill deleted for appointment " + bill.getAppointment().getId(),
+            bill,
+            null
+        );
         billingRepository.deleteById(id);
     }
 }

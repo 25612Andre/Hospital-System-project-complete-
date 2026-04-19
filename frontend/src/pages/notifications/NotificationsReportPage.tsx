@@ -60,6 +60,8 @@ const NotificationsReportPage: React.FC = () => {
                 return "bg-purple-100 text-purple-800 border-purple-200";
             case AuditAction.LOGOUT:
                 return "bg-gray-100 text-gray-800 border-gray-200";
+            case AuditAction.PAYMENT:
+                return "bg-emerald-100 text-emerald-800 border-emerald-200";
             default:
                 return "bg-slate-100 text-slate-800 border-slate-200";
         }

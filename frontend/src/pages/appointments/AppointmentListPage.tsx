@@ -13,6 +13,7 @@ import StatsBar from "../../components/common/StatsBar";
 import { useAuth } from "../../context/useAuth";
 import ConsultationNoteModal from "./ConsultationNoteModal";
 import { useI18n } from "../../i18n/I18nProvider";
+import resolveBackendAssetUrl from "../../api/assetUrl";
 
 const emptyForm = {
   doctorId: "",
@@ -74,6 +75,10 @@ const AppointmentListPage: React.FC = () => {
 
   const doctorOptions = useMemo(() => doctors ?? [], [doctors]);
   const patientOptions = useMemo(() => patients ?? [], [patients]);
+  const selectedDoctor = useMemo(
+    () => doctorOptions.find((doctor) => String(doctor.id) === form.doctorId) ?? null,
+    [doctorOptions, form.doctorId]
+  );
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -341,6 +346,53 @@ const AppointmentListPage: React.FC = () => {
               ))}
             </select>
           </div>
+          {isPatient && selectedDoctor && (
+            <div className="md:col-span-2 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start">
+                <div className="h-24 w-24 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                  {selectedDoctor.profilePictureUrl ? (
+                    <img
+                      src={resolveBackendAssetUrl(selectedDoctor.profilePictureUrl)}
+                      alt={t("appointments.doctorPreview.photoAlt", { name: selectedDoctor.name })}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-3xl font-bold text-indigo-400">
+                      {selectedDoctor.name.charAt(0)}
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 space-y-3">
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-[0.2em] text-slate-400">
+                      {t("appointments.doctorPreview.title")}
+                    </p>
+                    <h3 className="mt-1 text-xl font-bold text-slate-900">Dr. {selectedDoctor.name}</h3>
+                    <p className="mt-1 text-sm text-slate-600">
+                      {selectedDoctor.specialization}
+                      {selectedDoctor.department?.name ? ` | ${selectedDoctor.department.name}` : ""}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 text-sm text-slate-600 md:grid-cols-2">
+                    <div>
+                      <span className="block text-xs font-semibold uppercase tracking-wide text-slate-400">{t("common.location")}</span>
+                      <span>{selectedDoctor.location?.path || selectedDoctor.location?.name || selectedDoctor.locationName || t("common.na")}</span>
+                    </div>
+                    <div>
+                      <span className="block text-xs font-semibold uppercase tracking-wide text-slate-400">{t("common.fee")}</span>
+                      <span>{selectedDoctor.department?.consultationFee ?? 0} FCFA</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="block text-xs font-semibold uppercase tracking-wide text-slate-400">{t("common.biography")}</span>
+                    <p className="mt-1 whitespace-pre-line text-sm text-slate-700">
+                      {selectedDoctor.biography || t("appointments.doctorPreview.noBiography")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
           <div>
             <label className="block text-sm mb-1">{t("appointments.form.patient")}</label>
             {isPatient ? (

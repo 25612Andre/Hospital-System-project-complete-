@@ -42,6 +42,9 @@ public class Doctor {
     @Column(name = "video_url", length = 500)
     private String videoUrl;
 
+    @Column(columnDefinition = "TEXT")
+    private String biography;
+
     @NotNull
     @ManyToOne
     @JoinColumn(name = "department_id", nullable = false)

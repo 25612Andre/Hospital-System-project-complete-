@@ -61,6 +61,16 @@ public class AuthController {
             boolean requiresTwoFactor = enforce2fa || ua.isTwoFactorEnabled();
             if (!requiresTwoFactor) {
                 String token = jwtService.generateToken(ua);
+                auditLogService.logActionAsUser(
+                        EntityType.USER_ACCOUNT,
+                        ua.getId(),
+                        AuditAction.LOGIN,
+                        "User logged in: " + ua.getUsername(),
+                        null,
+                        null,
+                        ua.getUsername(),
+                        ua.getId()
+                );
                 return ResponseEntity.ok(new AuthResponse(token, info, false));
             }
             String code = twoFactorAuthService.dispatchCode(ua);
@@ -73,14 +83,24 @@ public class AuthController {
     @PostMapping("/logout")
     public ResponseEntity<String> logout(@org.springframework.web.bind.annotation.RequestHeader(value = "Authorization", required = false) String token) {
         String username = "UNKNOWN";
+        Long userId = 0L;
         try {
             if (token != null && token.startsWith("Bearer ")) {
                 username = jwtService.extractUsername(token.substring(7));
+                userId = userAccountService.findOptional(username).map(UserAccount::getId).orElse(0L);
             }
         } catch (Exception ex) {}
         
-        auditLogService.logAction(EntityType.USER_ACCOUNT, null, AuditAction.LOGOUT, 
-            "User logged out: " + username, username, null);
+        auditLogService.logActionAsUser(
+                EntityType.USER_ACCOUNT,
+                userId,
+                AuditAction.LOGOUT,
+                "User logged out: " + username,
+                null,
+                null,
+                username,
+                userId
+        );
             
         return ResponseEntity.ok("Logged out");
     }
@@ -139,6 +159,16 @@ public class AuthController {
             Long patientId = ua.getPatient() != null ? ua.getPatient().getId() : null;
             Long doctorId = ua.getDoctor() != null ? ua.getDoctor().getId() : null;
             String token = jwtService.generateToken(ua);
+            auditLogService.logActionAsUser(
+                    EntityType.USER_ACCOUNT,
+                    ua.getId(),
+                    AuditAction.LOGIN,
+                    "User logged in with 2FA: " + ua.getUsername(),
+                    null,
+                    null,
+                    ua.getUsername(),
+                    ua.getId()
+            );
             return ResponseEntity.ok(new AuthResponse(token,
                     new AuthResponse.UserInfo(
                             ua.getId(),

@@ -7,5 +7,6 @@ public enum AuditAction {
     APPROVE,
     REJECT,
     LOGIN,
-    LOGOUT
+    LOGOUT,
+    PAYMENT
 }

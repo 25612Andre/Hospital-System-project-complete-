@@ -20,6 +20,7 @@ export type UserProfileUpdatePayload = {
     fullName?: string;
     phone?: string;
     specialization?: string;
+    biography?: string;
     gender?: string;
     age?: number;
     locationId?: number;

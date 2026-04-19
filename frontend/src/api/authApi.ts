@@ -89,6 +89,11 @@ export const authApi = {
     return data;
   },
 
+  logout: async () => {
+    const { data } = await httpClient.post<string>("/auth/logout");
+    return data;
+  },
+
   signup: async (payload: SignupPayload, profilePicture?: File) => {
     const formData = new FormData();
 

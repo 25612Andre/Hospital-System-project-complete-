@@ -2,6 +2,8 @@ package com.example.hospitalmanagement.service;
 
 import com.example.hospitalmanagement.model.Location;
 import com.example.hospitalmanagement.model.Patient;
+import com.example.hospitalmanagement.model.enums.AuditAction;
+import com.example.hospitalmanagement.model.enums.EntityType;
 import com.example.hospitalmanagement.model.enums.LocationType;
 import com.example.hospitalmanagement.repository.PatientRepository;
 import lombok.RequiredArgsConstructor;
@@ -26,6 +28,7 @@ public class PatientService {
     private final com.example.hospitalmanagement.repository.BillingRepository billRepository;
     private final com.example.hospitalmanagement.repository.UserAccountRepository userAccountRepository;
     private final com.example.hospitalmanagement.repository.VoiceMessageRepository voiceMessageRepository;
+    private final AuditLogService auditLogService;
 
     public List<Patient> getAll() {
         return repository.findAll();
@@ -106,12 +109,32 @@ public class PatientService {
         else if (patient.getLocationName() != null && !patient.getLocationName().isBlank()) {
             patient.setLocation(locationService.ensureLocationByName(patient.getLocationName()));
         }
-        return repository.save(patient);
+        Patient saved = repository.save(patient);
+        auditLogService.logAction(
+            EntityType.PATIENT,
+            saved.getId(),
+            AuditAction.CREATE,
+            "Patient created: " + saved.getFullName(),
+            null,
+            saved
+        );
+        return saved;
     }
 
     @org.springframework.transaction.annotation.Transactional
     public Patient update(@NonNull Long id, @NonNull Patient updated) {
         Patient existing = getById(id);
+        Patient oldState = Patient.builder()
+                .id(existing.getId())
+                .fullName(existing.getFullName())
+                .age(existing.getAge())
+                .gender(existing.getGender())
+                .email(existing.getEmail())
+                .phone(existing.getPhone())
+                .profilePictureUrl(existing.getProfilePictureUrl())
+                .location(existing.getLocation())
+                .doctors(existing.getDoctors())
+                .build();
         existing.setGender(normalizeGenderValue(updated.getGender()));
         if (!existing.getEmail().equalsIgnoreCase(updated.getEmail())
                 && repository.existsByEmailIgnoreCase(updated.getEmail())) {
@@ -138,11 +161,21 @@ public class PatientService {
         else {
             existing.setLocation(null);
         }
-        return repository.save(existing);
+        Patient saved = repository.save(existing);
+        auditLogService.logAction(
+            EntityType.PATIENT,
+            saved.getId(),
+            AuditAction.UPDATE,
+            "Patient updated: " + saved.getFullName(),
+            oldState,
+            saved
+        );
+        return saved;
     }
 
     @org.springframework.transaction.annotation.Transactional
     public void delete(@NonNull Long id) {
+        Patient patient = getById(id);
         // 1. Delete Linked UserAccount and their Voice Messages
         userAccountRepository.findByPatient_Id(id).ifPresent(ua -> {
             voiceMessageRepository.deleteBySenderOrRecipientId(ua.getId());
@@ -157,6 +190,14 @@ public class PatientService {
         }
 
         repository.deleteById(id);
+        auditLogService.logAction(
+            EntityType.PATIENT,
+            id,
+            AuditAction.DELETE,
+            "Patient deleted: " + patient.getFullName(),
+            patient,
+            null
+        );
     }
 
     private String normalizeFilter(String raw) {

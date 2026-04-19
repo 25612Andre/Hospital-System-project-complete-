@@ -76,6 +76,13 @@ public class DoctorService {
         existing.setName(updated.getName());
         existing.setContact(updated.getContact());
         existing.setSpecialization(updated.getSpecialization());
+        existing.setBiography(updated.getBiography());
+        if (updated.getProfilePictureUrl() != null) {
+            existing.setProfilePictureUrl(updated.getProfilePictureUrl());
+        }
+        if (updated.getVideoUrl() != null) {
+            existing.setVideoUrl(updated.getVideoUrl());
+        }
         existing.setDepartment(updated.getDepartment());
         com.example.hospitalmanagement.model.Location location = updated.getLocation();
         if (location != null && location.getId() != null) {
