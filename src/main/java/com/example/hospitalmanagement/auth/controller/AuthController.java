@@ -12,7 +12,7 @@ import com.example.hospitalmanagement.auth.service.UserAccountService;
 import com.example.hospitalmanagement.auth.service.VerificationService;
 import com.example.hospitalmanagement.dto.UserAccountRequest;
 import com.example.hospitalmanagement.model.UserAccount;
-import com.example.hospitalmanagement.auth.service.AuditLogService;
+import com.example.hospitalmanagement.service.AuditLogService;
 import com.example.hospitalmanagement.model.enums.AuditAction;
 import com.example.hospitalmanagement.model.enums.EntityType;
 import com.example.hospitalmanagement.security.JwtService;

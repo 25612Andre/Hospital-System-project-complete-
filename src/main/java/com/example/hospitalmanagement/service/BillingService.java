@@ -5,7 +5,7 @@ import com.example.hospitalmanagement.model.Appointment;
 import com.example.hospitalmanagement.model.Bill;
 import com.example.hospitalmanagement.repository.AppointmentRepository;
 import com.example.hospitalmanagement.repository.BillingRepository;
-import com.example.hospitalmanagement.auth.service.AuditLogService;
+import com.example.hospitalmanagement.service.AuditLogService;
 import com.example.hospitalmanagement.model.enums.AuditAction;
 import com.example.hospitalmanagement.model.enums.EntityType;
 import java.time.LocalDateTime;
