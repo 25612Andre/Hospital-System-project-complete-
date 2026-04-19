@@ -26,7 +26,7 @@ const LoginPage: React.FC = () => {
         return navigate("/2fa");
       }
       navigate("/");
-    } catch (err) {
+    } catch {
       setError(t("auth.loginFailed"));
       toast.error(t("auth.loginFailed"));
     } finally {

@@ -1,6 +1,6 @@
 import type { LoginPayload, AuthUser } from "../api/authApi";
 
-export type Role = "ADMIN" | "DOCTOR" | "PATIENT" | "RECEPTIONIST";
+export type Role = "ADMIN" | "DOCTOR" | "PATIENT";
 
 export interface AuthState {
   user: AuthUser | null;

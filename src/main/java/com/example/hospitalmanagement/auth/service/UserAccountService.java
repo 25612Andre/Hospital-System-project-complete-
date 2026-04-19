@@ -60,8 +60,8 @@ public class UserAccountService {
                 .orElseThrow(() -> new RuntimeException("User not found"));
     }
 
-    public Page<UserAccount> search(@NonNull String term, @NonNull Pageable pageable) {
-        String normalized = term.trim();
+    public Page<UserAccount> search(String term, @NonNull Pageable pageable) {
+        String normalized = term == null ? "" : term.trim();
         if (normalized.isEmpty()) {
             return userAccountRepository.findAll(pageable);
         }
@@ -310,6 +310,26 @@ public class UserAccountService {
             if (hasText(req.getFullName())) doctor.setName(req.getFullName().trim());
             if (hasText(req.getPhone())) doctor.setContact(req.getPhone().trim());
             if (hasText(req.getSpecialization())) doctor.setSpecialization(req.getSpecialization().trim());
+        }
+
+        Location resolvedLocation = null;
+        if (req.getLocationId() != null) {
+            resolvedLocation = locationRepository.findById(req.getLocationId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Location not found"));
+        } else if (hasText(req.getLocationName())) {
+            resolvedLocation = locationService.ensureLocationByName(req.getLocationName().trim());
+        }
+        if (req.getLocationId() != null || hasText(req.getLocationName())) {
+            ua.setLocation(resolvedLocation);
+            if (patient != null) {
+                patient.setLocation(resolvedLocation);
+                patientRepository.save(patient);
+            }
+            if (doctor != null) {
+                doctor.setLocation(resolvedLocation);
+            }
+        }
+        if (doctor != null) {
             doctorService.update(doctor.getId(), doctor);
         }
 

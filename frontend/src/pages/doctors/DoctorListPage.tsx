@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import type { AxiosError } from "axios";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import AppTable from "../../components/common/AppTable";
@@ -100,8 +101,9 @@ const DoctorListPage: React.FC = () => {
       }
       resetForm();
       queryClient.invalidateQueries({ queryKey: ["doctors"] });
-    } catch (err: any) {
-      const msg = err.response?.data?.message || t("doctors.toast.saveFailed");
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string }>;
+      const msg = error.response?.data?.message || t("doctors.toast.saveFailed");
       toast.error(msg);
     }
   };

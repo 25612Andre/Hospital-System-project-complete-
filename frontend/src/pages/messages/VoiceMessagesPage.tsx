@@ -1,4 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useRef, useEffect } from "react";
+import type { AxiosError } from "axios";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { voiceMessageApi } from "../../api/voiceMessageApi";
@@ -96,7 +98,7 @@ const VoiceMessagesPage: React.FC = () => {
         queryKey: ["users-search", searchRecipient],
         queryFn: () => userApi.list({ q: searchRecipient, page: 0, size: 10 }),
         enabled: searchRecipient.length >= 1 && showUserDropdown && !selectedRecipientId,
-        placeholderData: (previousData: any) => previousData,
+        placeholderData: (previousData) => previousData,
         retry: false,
     });
 
@@ -124,9 +126,10 @@ const VoiceMessagesPage: React.FC = () => {
             setSelectedRecipientId("");
             setSearchRecipient("");
         },
-        onError: (err: any) => {
-            console.error("Send failed:", err);
-            const msg = err.response?.data?.message || err.message || t("messages.sendError");
+        onError: (err) => {
+            const error = err as AxiosError<{ message?: string }>;
+            console.error("Send failed:", error);
+            const msg = error.response?.data?.message || error.message || t("messages.sendError");
             toast.error("Échec de l'envoi: " + msg);
         },
     });
@@ -180,8 +183,9 @@ const VoiceMessagesPage: React.FC = () => {
             recorder.start();
             setIsRecording(true);
         } catch (err: any) {
-            console.error("Recording error:", err);
-            const errorMsg = err.name === 'NotAllowedError'
+            const error = err as DOMException;
+            console.error("Recording error:", error);
+            const errorMsg = error.name === 'NotAllowedError'
                 ? "Permission au micro refusée. Veuillez l'autoriser dans votre navigateur."
                 : (err.name === 'NotFoundError' ? "Aucun microphone détecté." : t("messages.recordingError"));
             toast.error(errorMsg);

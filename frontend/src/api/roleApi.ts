@@ -10,7 +10,6 @@ const defaultRoles: Role[] = [
   { id: 1, name: "ADMIN" },
   { id: 2, name: "DOCTOR" },
   { id: 3, name: "PATIENT" },
-  { id: 4, name: "RECEPTIONIST" },
 ];
 
 const fallbackPage = (page = 0, size = defaultRoles.length): PagedResult<Role> => {

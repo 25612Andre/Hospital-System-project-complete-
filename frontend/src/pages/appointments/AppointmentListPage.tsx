@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import type { AxiosError } from "axios";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import AppTable from "../../components/common/AppTable";
@@ -218,9 +219,9 @@ const AppointmentListPage: React.FC = () => {
       }
       resetForm();
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
-    } catch (error: any) {
-      console.error(error);
-      const msg = error.response?.data?.message || t("appointments.toast.saveFailed");
+    } catch (error) {
+      const err = error as AxiosError<{ message?: string }>;
+      const msg = err.response?.data?.message || t("appointments.toast.saveFailed");
       toast.error(msg);
     }
   };
@@ -242,7 +243,7 @@ const AppointmentListPage: React.FC = () => {
       await appointmentApi.complete(id);
       toast.success(t("appointments.toast.completed"));
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
-    } catch (e) {
+    } catch {
       toast.error(t("appointments.toast.completeFailed"));
     }
   };
@@ -253,7 +254,7 @@ const AppointmentListPage: React.FC = () => {
       await appointmentApi.remove(id);
       toast.success(t("appointments.toast.deleted"));
       queryClient.invalidateQueries({ queryKey: ["appointments"] });
-    } catch (e) {
+    } catch {
       toast.error(t("appointments.toast.deleteFailed"));
     }
   };
@@ -520,7 +521,7 @@ const AppointmentListPage: React.FC = () => {
                             await appointmentApi.update(row.id, { ...row, status: "Scheduled", doctorId: row.doctor.id, patientId: row.patient.id });
                             toast.success(t("appointments.toast.approved"));
                             queryClient.invalidateQueries({ queryKey: ["appointments"] });
-                          } catch (e) { toast.error(t("appointments.toast.approveFailed")); }
+                          } catch { toast.error(t("appointments.toast.approveFailed")); }
                         }}
                       >
                         {t("appointments.action.approve")}
@@ -534,7 +535,7 @@ const AppointmentListPage: React.FC = () => {
                             await appointmentApi.update(row.id, { ...row, status: "Cancelled", doctorId: row.doctor.id, patientId: row.patient.id });
                             toast.success(t("appointments.toast.rejected"));
                             queryClient.invalidateQueries({ queryKey: ["appointments"] });
-                          } catch (e) { toast.error(t("appointments.toast.rejectFailed")); }
+                          } catch { toast.error(t("appointments.toast.rejectFailed")); }
                         }}
                       >
                         {t("appointments.action.reject")}

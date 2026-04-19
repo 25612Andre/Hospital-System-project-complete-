@@ -39,6 +39,18 @@ export interface LoginResponse {
   requires2fa?: boolean;
 }
 
+export interface TwoFactorSetupPayload {
+  username: string;
+  password: string;
+  enable: boolean;
+}
+
+export interface TwoFactorSetupResponse {
+  enabled: boolean;
+  deliveryChannel: string;
+  instructions: string;
+}
+
 export const authApi = {
   login: async (payload: LoginPayload): Promise<LoginResponse> => {
     const { data } = await httpClient.post<LoginResponse>("/auth/login", payload);
@@ -69,6 +81,11 @@ export const authApi = {
       username,
       code,
     });
+    return data;
+  },
+
+  setup2fa: async (payload: TwoFactorSetupPayload): Promise<TwoFactorSetupResponse> => {
+    const { data } = await httpClient.post<TwoFactorSetupResponse>("/auth/2fa/setup", payload);
     return data;
   },
 

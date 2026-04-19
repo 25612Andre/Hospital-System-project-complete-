@@ -31,6 +31,14 @@ export interface LocationFilter {
   sort?: string;
 }
 
+export interface LocationImportResult {
+  message: string;
+  success: boolean;
+  processedRows: number;
+  totalLocations: number;
+  skipped: boolean;
+}
+
 /**
  * Location API following pharmacy-management pattern.
  * Main endpoint supports filtering by any column.
@@ -111,8 +119,8 @@ export const locationApi = {
   /**
    * Clear all existing locations and import from locations.json.
    */
-  clearAndImport: async (): Promise<{ processedRows: number; totalLocations: number; skipped: boolean }> => {
-    const { data } = await httpClient.post('/locations/clear-and-import');
+  clearAndImport: async (): Promise<LocationImportResult> => {
+    const { data } = await httpClient.post<LocationImportResult>('/locations/clear-and-import');
     return data;
   },
 

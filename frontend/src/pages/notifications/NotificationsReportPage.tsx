@@ -27,7 +27,10 @@ const NotificationsReportPage: React.FC = () => {
         retry: 1,
     });
 
-    const handleFilterChange = (key: keyof AuditLogSearchParams, value: any) => {
+    const handleFilterChange = (
+        key: keyof AuditLogSearchParams,
+        value: AuditLogSearchParams[keyof AuditLogSearchParams] | ""
+    ) => {
         setFilters((prev) => ({
             ...prev,
             [key]: value || undefined,
@@ -95,7 +98,7 @@ const NotificationsReportPage: React.FC = () => {
     };
 
     const formatEntityType = (entityType: string) => {
-        const key = `auditLogs.entity.${entityType}` as any;
+        const key = `auditLogs.entity.${entityType}` as Parameters<typeof t>[0];
         const translated = t(key);
         return translated !== key ? translated : entityType.replace(/_/g, " ");
     };
@@ -226,7 +229,7 @@ const NotificationsReportPage: React.FC = () => {
                             <option value="">{t("auditLogs.filters.allActions")}</option>
                             {Object.values(AuditAction).map((action) => (
                                 <option key={action} value={action}>
-                                    {t(`auditLogs.action.${action}` as any)}
+                                    {t(`auditLogs.action.${action}` as Parameters<typeof t>[0])}
                                 </option>
                             ))}
                         </select>
@@ -312,7 +315,7 @@ const NotificationsReportPage: React.FC = () => {
                                                     log.action
                                                 )}`}
                                             >
-                                                {t(`auditLogs.action.${log.action}` as any)}
+                                                {t(`auditLogs.action.${log.action}` as Parameters<typeof t>[0])}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">

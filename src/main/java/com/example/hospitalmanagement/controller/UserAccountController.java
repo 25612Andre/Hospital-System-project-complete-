@@ -34,7 +34,7 @@ public class UserAccountController {
     }
 
     @GetMapping("/search")
-    public ResponseEntity<Page<UserAccount>> search(@RequestParam @NonNull String q,
+    public ResponseEntity<Page<UserAccount>> search(@RequestParam(required = false) String q,
                                                     @NonNull @PageableDefault(sort = "username") Pageable pageable) {
         return ResponseEntity.ok(userAccountService.search(q, pageable));
     }

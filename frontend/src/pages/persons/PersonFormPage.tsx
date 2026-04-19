@@ -26,7 +26,7 @@ const PersonFormPage: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const isEdit = Boolean(id);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(isEdit);
   const [locationName, setLocationName] = useState("");
   const [form, setForm] = useState<Person>({
     fullName: "",
@@ -39,7 +39,6 @@ const PersonFormPage: React.FC = () => {
 
   useEffect(() => {
     if (!isEdit || !id) return;
-    setLoading(true);
     personApi.getById(Number(id)).then((data) => {
       setForm(data);
       setLocationName(data.location?.name ?? "");
@@ -48,7 +47,7 @@ const PersonFormPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const payload: any = {
+    const payload: Person = {
       ...form,
       locationName: locationName.trim(),
     };

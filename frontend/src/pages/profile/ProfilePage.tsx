@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import type { AxiosError } from "axios";
+import { authApi } from "../../api/authApi";
 import { useAuth } from "../../context/useAuth";
 import AppButton from "../../components/common/AppButton";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -68,34 +70,11 @@ const ProfilePage: React.FC = () => {
         enabled: !!accountLocationId,
     });
 
-    useEffect(() => {
-        if (isEditing) {
-            if (patient) {
-                setFormData(prev => ({
-                    ...prev,
-                    fullName: patient.fullName || "",
-                    phone: patient.phone || "",
-                    age: String(patient.age || ""),
-                    gender: patient.gender || ""
-                }));
-            } else if (doctor) {
-                setFormData(prev => ({
-                    ...prev,
-                    fullName: doctor.name || "",
-                    phone: doctor.contact || "",
-                    specialization: doctor.specialization || ""
-                }));
-            }
-            // Initialize location name
-            const currentLoc = patient?.location?.name || doctor?.location?.name || account?.location?.name || "";
-            setFormData(prev => ({ ...prev, locationName: currentLoc }));
-        }
-    }, [isEditing, patient, doctor, account]);
-
     const handleCancel = () => {
         setIsEditing(false);
         setProfilePicture(null);
         setProfilePreview("");
+        setAvatarLoadFailed(false);
         setFormData(prev => ({ ...prev, password: "" }));
     };
 
@@ -116,18 +95,30 @@ const ProfilePage: React.FC = () => {
         }
 
         setProfilePicture(file);
+        setAvatarLoadFailed(false);
         const reader = new FileReader();
         reader.onloadend = () => setProfilePreview(reader.result as string);
         reader.readAsDataURL(file);
     };
 
+    const startEditing = () => {
+        setFormData({
+            password: "",
+            fullName: patient?.fullName || doctor?.name || "",
+            phone: patient?.phone || doctor?.contact || "",
+            specialization: doctor?.specialization || "",
+            age: patient?.age ? String(patient.age) : "",
+            gender: patient?.gender || "",
+            locationName: patient?.location?.name || doctor?.location?.name || account?.location?.name || "",
+        });
+        setAvatarLoadFailed(false);
+        setIsEditing(true);
+    };
+
     const handleSave = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const payload: any = {
-                username: user?.username,
-                role: user?.role,
-            };
+            const payload: Parameters<typeof userApi.updateProfile>[0] = {};
 
             if (formData.password.trim()) {
                 payload.password = formData.password.trim();
@@ -165,15 +156,16 @@ const ProfilePage: React.FC = () => {
             queryClient.invalidateQueries({ queryKey: ["my-patient-profile"] });
             queryClient.invalidateQueries({ queryKey: ["my-doctor-profile"] });
             queryClient.invalidateQueries({ queryKey: ["my-user-profile"] });
-        } catch (err: any) {
-            const msg = err?.response?.data?.message || err?.response?.data?.error || err?.message || t("profile.toast.updateFailed");
-            if (!err?.response) {
-                toast.error(msg);
-            }
+        } catch (err) {
+            const error = err as AxiosError<{ message?: string; error?: string }>;
+            const msg =
+                error.response?.data?.message ||
+                error.response?.data?.error ||
+                error.message ||
+                t("profile.toast.updateFailed");
+            toast.error(msg);
         }
     };
-
-    if (!user) return <div>{t("profile.notLoggedIn")}</div>;
 
     const rawAvatarPath =
         account?.profilePictureUrl ||
@@ -184,16 +176,47 @@ const ProfilePage: React.FC = () => {
     const existingAvatarUrl = resolveBackendAssetUrl(rawAvatarPath);
     const avatarUrl = isEditing && profilePreview ? profilePreview : existingAvatarUrl;
 
-    useEffect(() => {
-        setAvatarLoadFailed(false);
-    }, [avatarUrl]);
+    const handleToggleTwoFactor = async () => {
+        if (!user) {
+            return;
+        }
+        const enable = !account?.twoFactorEnabled;
+        const confirmMessage = enable
+            ? "Enable 2FA? You will need a code from your email to login next time."
+            : "Disable 2FA?";
+        if (!window.confirm(confirmMessage)) {
+            return;
+        }
+        const password = window.prompt("Please confirm your password to change 2FA settings:");
+        if (!password) {
+            return;
+        }
+        try {
+            const result = await authApi.setup2fa({
+                username: user.username,
+                password,
+                enable,
+            });
+            toast.success(result.instructions || (enable ? "2FA Enabled" : "2FA Disabled"));
+            queryClient.invalidateQueries({ queryKey: ["my-user-profile"] });
+        } catch (err) {
+            const error = err as AxiosError<{ message?: string; error?: string }>;
+            toast.error(
+                error.response?.data?.message ||
+                error.response?.data?.error ||
+                "Verification failed"
+            );
+        }
+    };
+
+    if (!user) return <div>{t("profile.notLoggedIn")}</div>;
 
     return (
         <div className="max-w-2xl mx-auto space-y-6">
             <div className="sticky top-0 z-10 bg-slate-50 border-b border-slate-200 pb-2 pt-4 flex items-center justify-between mb-4">
                 <h1 className="text-2xl font-bold text-slate-800">{t("nav.profile")}</h1>
                 <div className="flex gap-2">
-                    {!isEditing && <AppButton onClick={() => setIsEditing(true)}>{t("profile.editProfile")}</AppButton>}
+                    {!isEditing && <AppButton onClick={startEditing}>{t("profile.editProfile")}</AppButton>}
                     <AppButton variant="secondary" onClick={logout}>{t("topbar.logout")}</AppButton>
                 </div>
             </div>
@@ -383,20 +406,8 @@ const ProfilePage: React.FC = () => {
                                     {account?.twoFactorEnabled ? t("common.enabled") : t("common.disabled")}
                                 </span>
                                 <button
-                                    onClick={() => {
-                                        const enable = !account?.twoFactorEnabled;
-                                        if (window.confirm(enable ? "Enable 2FA? You will need a code from your email to login next time." : "Disable 2FA?")) {
-                                            const pass = window.prompt("Please confirm your password to change 2FA settings:");
-                                            if (pass) {
-                                                userApi.updateUser(user.id, { password: pass, enabled: enable })
-                                                    .then(() => {
-                                                        toast.success(enable ? "2FA Enabled" : "2FA Disabled");
-                                                        queryClient.invalidateQueries({ queryKey: ["my-user-profile"] });
-                                                    })
-                                                    .catch(() => toast.error("Verification failed"));
-                                            }
-                                        }
-                                    }}
+                                    type="button"
+                                    onClick={handleToggleTwoFactor}
                                     className="text-xs text-indigo-600 hover:text-indigo-800 underline font-medium"
                                 >
                                     {account?.twoFactorEnabled ? "Disable" : "Enable"}

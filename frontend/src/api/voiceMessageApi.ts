@@ -1,3 +1,4 @@
+import type { AxiosRequestConfig } from "axios";
 import httpClient from "./httpClient";
 
 export interface VoiceMessageResponse {
@@ -18,6 +19,11 @@ const fallbackOrigin =
 
 const rawBase = import.meta.env.VITE_API_BASE_URL || fallbackOrigin;
 const apiBase = rawBase.endsWith("/api") ? rawBase : `${rawBase.replace(/\/$/, "")}/api`;
+const silentRequestConfig = { skipToast: true } as AxiosRequestConfig;
+const silentBlobRequestConfig = {
+    responseType: "blob",
+    skipToast: true,
+} as AxiosRequestConfig;
 
 export const voiceMessageApi = {
     send: async (recipientId: number, audioFile: File) => {
@@ -44,16 +50,13 @@ export const voiceMessageApi = {
         return data;
     },
     markAsRead: async (id: number) => {
-        await httpClient.put(`/voice-messages/${id}/read`, {}, { skipToast: true } as any);
+        await httpClient.put(`/voice-messages/${id}/read`, {}, silentRequestConfig);
     },
     getAudioUrl: (id: number) => {
         return `${apiBase}/voice-messages/${id}/audio`;
     },
     getAudioBlob: async (id: number) => {
-        const response = await httpClient.get(`/voice-messages/${id}/audio`, {
-            responseType: "blob",
-            skipToast: true,
-        } as any);
+        const response = await httpClient.get<Blob>(`/voice-messages/${id}/audio`, silentBlobRequestConfig);
         return response.data;
     },
 };

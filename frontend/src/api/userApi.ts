@@ -4,7 +4,7 @@ import type { PagedResult } from "./personApi";
 export interface UserAccount {
     id: number;
     username: string;
-    role: "ADMIN" | "DOCTOR" | "PATIENT" | "RECEPTIONIST";
+    role: "ADMIN" | "DOCTOR" | "PATIENT";
     twoFactorEnabled?: boolean;
     profilePictureUrl?: string;
     location?: { id: number; name: string };
@@ -27,12 +27,21 @@ export type UserProfileUpdatePayload = {
     enabled?: boolean;
 };
 
+export type UserAccountCreatePayload = Record<string, string | number | boolean | null | undefined>;
+
+export type UserListParams = {
+    q?: string;
+    page?: number;
+    size?: number;
+    sort?: string;
+};
+
 export const userApi = {
-    create: async (data: any, profilePicture?: File) => {
+    create: async (data: UserAccountCreatePayload, profilePicture?: File) => {
         const formData = new FormData();
-        Object.keys(data).forEach(key => {
-            if (data[key] !== undefined && data[key] !== null) {
-                formData.append(key, data[key]);
+        Object.entries(data).forEach(([key, value]) => {
+            if (value !== undefined && value !== null) {
+                formData.append(key, String(value));
             }
         });
         if (profilePicture) {
@@ -46,7 +55,7 @@ export const userApi = {
         return response.data;
     },
 
-    list: async (params?: any) => {
+    list: async (params?: UserListParams) => {
         const { data } = await httpClient.get<PagedResult<UserAccount>>("/users/search", { params });
         return data;
     },

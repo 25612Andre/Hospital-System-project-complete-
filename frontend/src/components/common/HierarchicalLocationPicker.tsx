@@ -62,7 +62,7 @@ export default function HierarchicalLocationPicker({ value, onChange, label, req
             };
             loadPath();
         }
-    }, [value]);
+    }, [value, selections]);
 
     const loadLevel = async (levelIndex: number, parentId: number | null) => {
         setLoading(prev => {

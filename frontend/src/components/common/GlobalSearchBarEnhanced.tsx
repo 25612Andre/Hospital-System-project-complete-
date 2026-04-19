@@ -8,7 +8,7 @@ import { useI18n } from "../../i18n/I18nProvider";
 const GlobalSearchBarEnhanced: React.FC = () => {
     const { t } = useI18n();
     const [term, setTerm] = useState("");
-    const [showDropdown, setShowDropdown] = useState(false);
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(-1);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -33,23 +33,18 @@ const GlobalSearchBarEnhanced: React.FC = () => {
         });
         return results;
     }, [searchResults]);
+    const showDropdown = isDropdownOpen && term.length > 0;
 
     // Close dropdown when clicking outside
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setShowDropdown(false);
+                setIsDropdownOpen(false);
             }
         };
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
-
-    // Show dropdown when there are results
-    useEffect(() => {
-        setShowDropdown(flatResults.length > 0 && term.length > 0);
-        setSelectedIndex(-1);
-    }, [flatResults, term]);
 
     // Handle keyboard navigation
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -73,18 +68,18 @@ const GlobalSearchBarEnhanced: React.FC = () => {
                 } else if (term.trim()) {
                     // Navigate to full search page
                     navigate(`/search?q=${encodeURIComponent(term)}`);
-                    setShowDropdown(false);
+                    setIsDropdownOpen(false);
                 }
                 break;
             case "Escape":
-                setShowDropdown(false);
+                setIsDropdownOpen(false);
                 setSelectedIndex(-1);
                 break;
         }
     };
 
     const handleSelectResult = (result: SearchResultDTO & { category: string }) => {
-        setShowDropdown(false);
+        setIsDropdownOpen(false);
         setTerm("");
 
         // Navigate to the appropriate detail page based on type
@@ -168,7 +163,11 @@ const GlobalSearchBarEnhanced: React.FC = () => {
                     ref={inputRef}
                     type="text"
                     value={term}
-                    onChange={(e) => setTerm(e.target.value)}
+                    onChange={(e) => {
+                        setTerm(e.target.value);
+                        setIsDropdownOpen(true);
+                        setSelectedIndex(-1);
+                    }}
                     onKeyDown={handleKeyDown}
                     placeholder={t("search.placeholder")}
                     className="flex-1 w-full min-w-0 outline-none bg-transparent text-sm placeholder-slate-400 sm:min-w-[200px]"
@@ -180,7 +179,7 @@ const GlobalSearchBarEnhanced: React.FC = () => {
                     <button
                         onClick={() => {
                             setTerm("");
-                            setShowDropdown(false);
+                            setIsDropdownOpen(false);
                             inputRef.current?.focus();
                         }}
                         className="text-slate-400 hover:text-slate-600"
@@ -242,7 +241,7 @@ const GlobalSearchBarEnhanced: React.FC = () => {
                                 <button
                                     onClick={() => {
                                         navigate(`/search?q=${encodeURIComponent(term)}`);
-                                        setShowDropdown(false);
+                                        setIsDropdownOpen(false);
                                     }}
                                     className="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1"
                                 >

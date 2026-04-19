@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppButton from "../../components/common/AppButton";
 import { useAuth } from "../../context/useAuth";
@@ -7,16 +7,18 @@ import { toast } from "react-toastify";
 const TwoFactorPage: React.FC = () => {
   const { verify2fa, logout, user, send2fa } = useAuth();
   const [code, setCode] = useState("");
-  const pendingUser = useMemo(() => {
+  const pendingUser = (() => {
     if (user?.username) return user.username;
     const stored = localStorage.getItem("pending_user");
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      return parsed?.username || "";
+    if (!stored) return "";
+    try {
+      const parsed = JSON.parse(stored) as { username?: string };
+      return parsed.username || "";
+    } catch {
+      return "";
     }
-    return "";
-  }, [user?.username]);
-  const demoCode = useMemo(() => localStorage.getItem("pending_2fa_code") || "", []);
+  })();
+  const demoCode = localStorage.getItem("pending_2fa_code") || "";
   const navigate = useNavigate();
 
   useEffect(() => {

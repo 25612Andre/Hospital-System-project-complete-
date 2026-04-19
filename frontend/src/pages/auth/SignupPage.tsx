@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import type { AxiosError } from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { authApi } from "../../api/authApi";
 import AppButton from "../../components/common/AppButton";
@@ -51,8 +52,9 @@ const SignupPage: React.FC = () => {
       }, profilePicture || undefined);
       toast.success(t("signup.success"));
       navigate("/login");
-    } catch (err: any) {
-      const msg = err.response?.data?.message || err.response?.data?.error || err.message || "Signup failed.";
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string; error?: string }>;
+      const msg = error.response?.data?.message || error.response?.data?.error || error.message || "Signup failed.";
       toast.error(msg);
     }
   };

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import type { AxiosError } from "axios";
 import { toast } from "react-toastify";
 import AppTable from "../../components/common/AppTable";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
@@ -21,8 +22,9 @@ const UserEditModal: React.FC<{ user: UserAccount; onClose: () => void; onSucces
       toast.success("User updated successfully");
       onSuccess();
       onClose();
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Update failed");
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string }>;
+      toast.error(error.response?.data?.message || "Update failed");
     } finally {
       setSaving(false);
     }
@@ -49,12 +51,11 @@ const UserEditModal: React.FC<{ user: UserAccount; onClose: () => void; onSucces
             <select
               className="w-full border dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg px-3 py-2"
               value={role}
-              onChange={e => setRole(e.target.value as any)}
+              onChange={e => setRole(e.target.value as UserAccount["role"])}
             >
               <option value="ADMIN">ADMIN</option>
               <option value="DOCTOR">DOCTOR</option>
               <option value="PATIENT">PATIENT</option>
-              <option value="RECEPTIONIST">RECEPTIONIST</option>
             </select>
           </div>
           <div className="flex items-center gap-3 py-2">
@@ -98,7 +99,7 @@ const UserListPage: React.FC = () => {
       await userApi.remove(id);
       toast.success("User deleted");
       queryClient.invalidateQueries({ queryKey: ["users"] });
-    } catch (err) {
+    } catch {
       toast.error("Failed to delete user");
     }
   };

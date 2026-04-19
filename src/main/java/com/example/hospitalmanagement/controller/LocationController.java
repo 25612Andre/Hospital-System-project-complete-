@@ -1,6 +1,7 @@
 package com.example.hospitalmanagement.controller;
 
 import com.example.hospitalmanagement.dto.LocationDTO;
+import com.example.hospitalmanagement.dto.LocationImportResponse;
 import com.example.hospitalmanagement.dto.LocationRequest;
 import com.example.hospitalmanagement.dto.ResponseMessageDTO;
 import com.example.hospitalmanagement.model.enums.LocationType;
@@ -105,12 +106,15 @@ public class LocationController {
      * WARNING: This unlinks all patients/users from their locations!
      */
     @PostMapping("/clear-and-import")
-    public ResponseEntity<ResponseMessageDTO> clearAndImport() {
+    public ResponseEntity<LocationImportResponse> clearAndImport() {
         LocationImportService.ImportResult result = locationImportService.clearAndImport();
         String message = "Cleared existing locations and imported " + result.processedRows() + " rows; total locations: " + result.totalLocations();
-        return ResponseEntity.ok(ResponseMessageDTO.builder()
+        return ResponseEntity.ok(LocationImportResponse.builder()
                 .message(message)
                 .success(true)
+                .processedRows(result.processedRows())
+                .totalLocations(result.totalLocations())
+                .skipped(result.skipped())
                 .build());
     }
 
@@ -130,7 +134,7 @@ public class LocationController {
      * Import locations from JSON (only if table is empty or force=true).
      */
     @PostMapping("/import")
-    public ResponseEntity<ResponseMessageDTO> importFromJson(@RequestParam(defaultValue = "false") boolean force) {
+    public ResponseEntity<LocationImportResponse> importFromJson(@RequestParam(defaultValue = "false") boolean force) {
         LocationImportService.ImportResult result = locationImportService.importFromJson(force);
         String message;
         boolean success = !result.skipped();
@@ -139,9 +143,12 @@ public class LocationController {
         } else {
             message = "Imported " + result.processedRows() + " rows; total locations: " + result.totalLocations();
         }
-        return ResponseEntity.ok(ResponseMessageDTO.builder()
+        return ResponseEntity.ok(LocationImportResponse.builder()
                 .message(message)
                 .success(success)
+                .processedRows(result.processedRows())
+                .totalLocations(result.totalLocations())
+                .skipped(result.skipped())
                 .build());
     }
 }

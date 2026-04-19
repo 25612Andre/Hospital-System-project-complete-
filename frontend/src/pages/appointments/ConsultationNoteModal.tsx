@@ -1,4 +1,5 @@
 import React from "react";
+import type { AxiosError } from "axios";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import AppButton from "../../components/common/AppButton";
@@ -215,8 +216,9 @@ const ConsultationNoteModal: React.FC<Props> = ({ appointment, canEdit, onClose 
       await queryClient.invalidateQueries({ queryKey: ["consultation-note", appointment.id] });
       onClose();
     },
-    onError: (err: any) => {
-      const msg = err?.response?.data?.message || err?.message || t("common.requestFailed");
+    onError: (err) => {
+      const error = err as AxiosError<{ message?: string }>;
+      const msg = error.response?.data?.message || error.message || t("common.requestFailed");
       toast.error(msg);
     },
   });

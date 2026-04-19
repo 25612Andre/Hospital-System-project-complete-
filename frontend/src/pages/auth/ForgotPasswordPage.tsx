@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import type { AxiosError } from "axios";
 import { authApi } from "../../api/authApi";
 import AppButton from "../../components/common/AppButton";
 import { toast } from "react-toastify";
@@ -15,7 +16,7 @@ const ForgotPasswordPage: React.FC = () => {
   const handleRequestToken = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res: any = await authApi.requestPasswordReset(email);
+      const res = await authApi.requestPasswordReset(email);
       // In production, backend just says "Sent". In dev, it might return token.
       // User requested NOT to show it in notification or auto-fill.
       // We will log specific token info to console for debugging if needed.
@@ -23,7 +24,7 @@ const ForgotPasswordPage: React.FC = () => {
 
       toast.success("Reset code sent to your email.");
       setStep(2);
-    } catch (e) {
+    } catch {
       toast.error("Failed to send reset code");
     }
   };
@@ -38,8 +39,9 @@ const ForgotPasswordPage: React.FC = () => {
       await authApi.resetPassword(email, token, password);
       toast.success("Password reset successfully. Please login.");
       navigate("/login");
-    } catch (err: any) {
-      const msg = err.response?.data || "Failed to reset password. Invalid token?";
+    } catch (err) {
+      const error = err as AxiosError<string>;
+      const msg = error.response?.data || "Failed to reset password. Invalid token?";
       toast.error(msg);
     }
   };

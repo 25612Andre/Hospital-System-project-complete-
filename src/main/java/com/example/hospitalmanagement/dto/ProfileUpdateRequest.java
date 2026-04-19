@@ -12,4 +12,6 @@ public class ProfileUpdateRequest {
     private String specialization;
     private String gender;
     private Integer age;
+    private Long locationId;
+    private String locationName;
 }

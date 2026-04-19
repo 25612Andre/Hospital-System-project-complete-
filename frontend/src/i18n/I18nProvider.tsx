@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React from "react";
 import { translations, type Language, type TranslationKey } from "./translations";
 
@@ -54,4 +55,3 @@ export const useI18n = () => {
   }
   return ctx;
 };
-
