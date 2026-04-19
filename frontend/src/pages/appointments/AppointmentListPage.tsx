@@ -126,7 +126,6 @@ const AppointmentListPage: React.FC = () => {
        return;
     }
 
-    const year = selectedDate.getFullYear();
     let dateStr = form.appointmentDate;
     if (dateStr.length === 16) {
       dateStr += ":00";

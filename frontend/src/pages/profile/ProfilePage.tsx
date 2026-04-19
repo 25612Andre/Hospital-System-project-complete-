@@ -262,7 +262,7 @@ const ProfilePage: React.FC = () => {
                                     onChange={e => setFormData({ ...formData, fullName: e.target.value })}
                                     disabled={user.role === 'PATIENT'}
                                 />
-                                {user.role === 'PATIENT' && <p className="text-[10px] text-slate-400 mt-1">{t("profile.contactAdminToUpdate") || "Contact administrator to update personal details"}</p>}
+                                {user.role === 'PATIENT' && <p className="text-[10px] text-slate-400 mt-1">Contact administrator to update personal details</p>}
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700">{t("signup.phone")}</label>
@@ -388,12 +388,12 @@ const ProfilePage: React.FC = () => {
                                         if (window.confirm(enable ? "Enable 2FA? You will need a code from your email to login next time." : "Disable 2FA?")) {
                                             const pass = window.prompt("Please confirm your password to change 2FA settings:");
                                             if (pass) {
-                                                userApi.updateUser(user.id, { enabled, twoFactorEnabled: enable, password: pass })
+                                                userApi.updateUser(user.id, { password: pass, enabled: enable })
                                                     .then(() => {
                                                         toast.success(enable ? "2FA Enabled" : "2FA Disabled");
                                                         queryClient.invalidateQueries({ queryKey: ["my-user-profile"] });
                                                     })
-                                                    .catch(err => toast.error("Verification failed"));
+                                                    .catch(() => toast.error("Verification failed"));
                                             }
                                         }
                                     }}

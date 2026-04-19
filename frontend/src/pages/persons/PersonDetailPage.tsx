@@ -10,7 +10,7 @@ import { useI18n } from "../../i18n/I18nProvider";
 const PersonDetailPage: React.FC = () => {
   const { id } = useParams();
   const personId = Number(id);
-  const { t, language } = useI18n();
+  const { language } = useI18n();
 
   const { data, isLoading } = useQuery<Person>({
     queryKey: ["patient", personId],
