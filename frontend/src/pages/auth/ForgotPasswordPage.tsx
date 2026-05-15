@@ -3,12 +3,13 @@ import type { AxiosError } from "axios";
 import { authApi } from "../../api/authApi";
 import AppButton from "../../components/common/AppButton";
 import { toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 const ForgotPasswordPage: React.FC = () => {
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState("");
   const [token, setToken] = useState("");
+  const [emailSent, setEmailSent] = useState<boolean>(true);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const navigate = useNavigate();
@@ -17,15 +18,20 @@ const ForgotPasswordPage: React.FC = () => {
     e.preventDefault();
     try {
       const res = await authApi.requestPasswordReset(email);
-      // In production, backend just says "Sent". In dev, it might return token.
-      // User requested NOT to show it in notification or auto-fill.
-      // We will log specific token info to console for debugging if needed.
-      console.log("Debug Response:", res);
-
-      toast.success("Reset code sent to your email.");
+      setEmailSent(res.emailSent);
+      if (res.resetToken) {
+        setToken(res.resetToken);
+      }
+      toast.success(res.message || "Reset instructions were generated.");
       setStep(2);
-    } catch {
-      toast.error("Failed to send reset code");
+    } catch (err) {
+      const error = err as AxiosError<{ message?: string } | string>;
+      const payload = error.response?.data;
+      const msg =
+        typeof payload === "string"
+          ? payload
+          : payload?.message || "Unable to process reset request right now.";
+      toast.error(msg);
     }
   };
 
@@ -78,8 +84,10 @@ const ForgotPasswordPage: React.FC = () => {
             </form>
           ) : (
             <form onSubmit={handleReset} className="space-y-6">
-              <div className="text-sm bg-blue-50 text-blue-700 p-3 rounded mb-4">
-                Check your email for the verification code.
+              <div className={`text-sm p-3 rounded mb-4 ${emailSent ? "bg-blue-50 text-blue-700" : "bg-amber-50 text-amber-700"}`}>
+                {emailSent
+                  ? "Check your email for the verification code."
+                  : "Email service is unavailable. Use the reset code pre-filled below."}
               </div>
               <div>
                 <label className="block text-sm font-medium text-slate-700 mb-1">Reset Code</label>
@@ -121,12 +129,12 @@ const ForgotPasswordPage: React.FC = () => {
           )}
 
           <div className="mt-6 text-center">
-            <a href="/login" className="flex items-center justify-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
+            <Link to="/login" className="flex items-center justify-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-800 transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
               Back to log in
-            </a>
+            </Link>
           </div>
         </div>
       </div>

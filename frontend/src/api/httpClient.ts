@@ -18,6 +18,21 @@ const httpClient = axios.create({
   },
 });
 
+const toUserFriendlyError = (raw: unknown): string => {
+  if (typeof raw !== "string") return tStatic("errors.backendUnavailable");
+  const trimmed = raw.trim();
+  const lower = trimmed.toLowerCase();
+  if (
+    lower.includes("code: not_found") ||
+    lower.includes("404: not_found") ||
+    lower.includes("<!doctype html") ||
+    lower.includes("<html")
+  ) {
+    return tStatic("errors.backendUnavailable");
+  }
+  return trimmed;
+};
+
 httpClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("auth_token");
   if (token) {
@@ -52,7 +67,7 @@ httpClient.interceptors.response.use(
         }
       }, 500);
     } else if (!error.config?.skipToast) {
-      const displayMsg = typeof message === "string" ? message : (error.message || tStatic("common.requestFailed"));
+      const displayMsg = toUserFriendlyError(message);
       toast.error(displayMsg);
     }
     return Promise.reject(error);

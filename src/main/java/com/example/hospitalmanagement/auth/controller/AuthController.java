@@ -2,6 +2,7 @@ package com.example.hospitalmanagement.auth.controller;
 
 import com.example.hospitalmanagement.auth.dto.AuthRequest;
 import com.example.hospitalmanagement.auth.dto.AuthResponse;
+import com.example.hospitalmanagement.auth.dto.ForgotPasswordResponse;
 import com.example.hospitalmanagement.auth.dto.PasswordResetRequest;
 import com.example.hospitalmanagement.auth.dto.SignupResponse;
 import com.example.hospitalmanagement.auth.dto.TwoFactorRequest;
@@ -27,6 +28,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -45,6 +47,9 @@ public class AuthController {
 
     @Value("${app.auth.return-2fa-code:false}")
     private boolean return2faCode;
+
+    @Value("${app.auth.return-reset-token:true}")
+    private boolean returnResetToken;
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody AuthRequest request) {
@@ -104,12 +109,31 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<String> forgotPassword(@Valid @RequestBody PasswordResetRequest request) {
+    public ResponseEntity<ForgotPasswordResponse> forgotPassword(@Valid @RequestBody PasswordResetRequest request) {
         String token = verificationService.generateResetToken(request.getEmail());
-        mailService.send(request.getEmail(), "Password reset instructions",
-                "Use this token to reset your password within the next hour: " + token);
-        // In production, do not return token. For this demo/MVP, returning it simplifies testing.
-        return ResponseEntity.ok("Reset token sent to " + request.getEmail() + " (Token: " + token + ")");
+        boolean emailSent = true;
+        try {
+            mailService.send(request.getEmail(), "Password reset instructions",
+                    "Use this token to reset your password within the next hour: " + token);
+        } catch (ResponseStatusException ex) {
+            emailSent = false;
+        }
+
+        if (emailSent) {
+            return ResponseEntity.ok(new ForgotPasswordResponse(
+                    "If an account exists for this email, reset instructions were sent.",
+                    returnResetToken ? token : null,
+                    true
+            ));
+        }
+
+        return ResponseEntity.ok(new ForgotPasswordResponse(
+                returnResetToken
+                        ? "Email delivery is unavailable right now. Use the reset code below."
+                        : "Email delivery is unavailable right now. Please try again later.",
+                returnResetToken ? token : null,
+                false
+        ));
     }
 
     @PostMapping("/reset-password")

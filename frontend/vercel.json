@@ -7,6 +7,10 @@
     {
       "source": "/uploads/:path*",
       "destination": "https://hospital-system-management-kz0j.onrender.com/uploads/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/"
     }
   ]
 }

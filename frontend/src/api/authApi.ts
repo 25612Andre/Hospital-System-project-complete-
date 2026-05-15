@@ -56,23 +56,37 @@ export interface SignupResponse {
   redirectTo: string;
 }
 
+export interface ForgotPasswordResponse {
+  message: string;
+  resetToken?: string | null;
+  emailSent: boolean;
+}
+
 export const authApi = {
   login: async (payload: LoginPayload): Promise<LoginResponse> => {
     const { data } = await httpClient.post<LoginResponse>("/auth/login", payload);
     return data;
   },
 
-  requestPasswordReset: async (email: string) => {
-    const { data } = await httpClient.post<string>("/auth/forgot-password", { email });
+  requestPasswordReset: async (email: string): Promise<ForgotPasswordResponse> => {
+    const { data } = await httpClient.post<ForgotPasswordResponse>(
+      "/auth/forgot-password",
+      { email },
+      { skipToast: true } as any
+    );
     return data;
   },
 
   resetPassword: async (email: string, token: string, newPassword: string) => {
-    const { data } = await httpClient.post<string>("/auth/reset-password", {
-      email,
-      token,
-      newPassword,
-    });
+    const { data } = await httpClient.post<string>(
+      "/auth/reset-password",
+      {
+        email,
+        token,
+        newPassword,
+      },
+      { skipToast: true } as any
+    );
     return data;
   },
 
