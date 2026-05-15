@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import AppButton from "../../components/common/AppButton";
 import { useAuth } from "../../context/useAuth";
 import { toast } from "react-toastify";
@@ -46,8 +47,13 @@ const TwoFactorPage: React.FC = () => {
     try {
       await send2fa(pendingUser);
       toast.success("New code sent");
-    } catch {
-      toast.error("Could not resend code");
+    } catch (error) {
+      const backendMessage = axios.isAxiosError(error)
+        ? typeof error.response?.data === "string"
+          ? error.response.data
+          : error.response?.data?.message
+        : undefined;
+      toast.error(backendMessage || "Could not resend code");
     }
   };
 

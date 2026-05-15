@@ -34,6 +34,21 @@ public class TwoFactorAuthService {
     }
 
     public String dispatchCode(String username) {
+        if (asyncDispatch) {
+            return dispatchCodeAsync(username);
+        }
+        return dispatchCodeSync(username);
+    }
+
+    public String dispatchCodeSync(String username) {
+        return createAndSendCode(username, false);
+    }
+
+    public String dispatchCodeAsync(String username) {
+        return createAndSendCode(username, true);
+    }
+
+    private String createAndSendCode(String username, boolean async) {
         if (username == null || username.isBlank()) {
             throw new IllegalArgumentException("Username/email is required to send 2FA code");
         }
@@ -49,7 +64,7 @@ Use the verification code %s to finish signing in. The code expires in %d minute
 If you did not initiate this request you can ignore this email.
 """.formatted(entry.code, CODE_TTL.toMinutes());
 
-        if (asyncDispatch) {
+        if (async) {
             CompletableFuture.runAsync(() -> {
                 try {
                     mailService.send(username, subject, body);
@@ -58,13 +73,13 @@ If you did not initiate this request you can ignore this email.
                     log.warn("2FA email dispatch failed for {}: {}", username, ex.getReason());
                 }
             });
-        } else {
-            try {
-                mailService.send(username, subject, body);
-            } catch (ResponseStatusException ex) {
-                pendingCodes.remove(normalized);
-                throw ex;
-            }
+            return entry.code;
+        }
+        try {
+            mailService.send(username, subject, body);
+        } catch (ResponseStatusException ex) {
+            pendingCodes.remove(normalized);
+            throw ex;
         }
         return entry.code;
     }

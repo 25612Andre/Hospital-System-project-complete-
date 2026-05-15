@@ -163,14 +163,9 @@ public class AuthController {
 
     @PostMapping("/2fa/send")
     public ResponseEntity<String> send2fa(@Valid @RequestBody TwoFactorRequest request) {
-        String code;
-        try {
-            code = userAccountService.findOptional(request.getUsername())
-                    .map(twoFactorAuthService::dispatchCode)
-                    .orElseGet(() -> twoFactorAuthService.dispatchCode(request.getUsername()));
-        } catch (RuntimeException ex) {
-            code = twoFactorAuthService.dispatchCode(request.getUsername());
-        }
+        String code = userAccountService.findOptional(request.getUsername())
+                .map(user -> twoFactorAuthService.dispatchCodeSync(user.getUsername()))
+                .orElseGet(() -> twoFactorAuthService.dispatchCodeSync(request.getUsername()));
         if (return2faCode) {
             return ResponseEntity.ok(code);
         }
