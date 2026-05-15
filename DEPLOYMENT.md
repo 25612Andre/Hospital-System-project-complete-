@@ -29,6 +29,8 @@ Set these backend environment variables:
   - `SPRING_MAIL_PASSWORD`
   - `SPRING_MAIL_SMTP_AUTH`
   - `SPRING_MAIL_SMTP_STARTTLS`
+  - `SPRING_MAIL_SMTP_STARTTLS_REQUIRED`
+  - `APP_MAIL_FROM`
 - Optional keep-alive vars (Render anti-sleep ping every 13 minutes):
   - `APP_KEEPALIVE_ENABLED=true`
   - `APP_KEEPALIVE_URL=https://<your-backend-domain>/api/health`
@@ -37,6 +39,21 @@ Set these backend environment variables:
 After deploy, verify:
 
 - `https://<your-backend-domain>/api/health`
+
+### Gmail SMTP (recommended)
+
+If you use Gmail for password reset and 2FA emails, set:
+
+- `SPRING_MAIL_HOST=smtp.gmail.com`
+- `SPRING_MAIL_PORT=587`
+- `SPRING_MAIL_USERNAME=<your-gmail-address>`
+- `SPRING_MAIL_PASSWORD=<gmail-app-password>`
+- `SPRING_MAIL_SMTP_AUTH=true`
+- `SPRING_MAIL_SMTP_STARTTLS=true`
+- `SPRING_MAIL_SMTP_STARTTLS_REQUIRED=true`
+- `APP_MAIL_FROM=<your-gmail-address>`
+
+Important: `SPRING_MAIL_PASSWORD` must be a Google App Password (16 chars), not your normal Gmail password.
 
 ## 1.1 Keep backend warm on Render (13 min)
 

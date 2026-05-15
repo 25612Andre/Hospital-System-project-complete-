@@ -64,7 +64,11 @@ export interface ForgotPasswordResponse {
 
 export const authApi = {
   login: async (payload: LoginPayload): Promise<LoginResponse> => {
-    const { data } = await httpClient.post<LoginResponse>("/auth/login", payload);
+    const { data } = await httpClient.post<LoginResponse>(
+      "/auth/login",
+      payload,
+      { skipToast: true } as any
+    );
     return data;
   },
 
@@ -91,20 +95,32 @@ export const authApi = {
   },
 
   send2faCode: async (username: string) => {
-    const { data } = await httpClient.post<string>("/auth/2fa/send", { username });
+    const { data } = await httpClient.post<string>(
+      "/auth/2fa/send",
+      { username },
+      { skipToast: true } as any
+    );
     return data;
   },
 
   verify2faCode: async (username: string, code: string): Promise<LoginResponse> => {
-    const { data } = await httpClient.post<LoginResponse>("/auth/2fa/verify", {
-      username,
-      code,
-    });
+    const { data } = await httpClient.post<LoginResponse>(
+      "/auth/2fa/verify",
+      {
+        username,
+        code,
+      },
+      { skipToast: true } as any
+    );
     return data;
   },
 
   setup2fa: async (payload: TwoFactorSetupPayload): Promise<TwoFactorSetupResponse> => {
-    const { data } = await httpClient.post<TwoFactorSetupResponse>("/auth/2fa/setup", payload);
+    const { data } = await httpClient.post<TwoFactorSetupResponse>(
+      "/auth/2fa/setup",
+      payload,
+      { skipToast: true } as any
+    );
     return data;
   },
 
