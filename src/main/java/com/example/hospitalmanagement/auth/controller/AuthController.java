@@ -42,6 +42,9 @@ public class AuthController {
     private final JwtService jwtService;
     private final AuditLogService auditLogService;
 
+    @Value("${app.auth.enforce-2fa:false}")
+    private boolean enforce2fa;
+
     @Value("${app.auth.return-2fa-code:false}")
     private boolean return2faCode;
 
@@ -61,18 +64,23 @@ public class AuthController {
                 doctorId,
                 ua.getProfilePictureUrl()
         );
-        String token = jwtService.generateToken(ua);
-        auditLogService.logActionAsUser(
-                EntityType.USER_ACCOUNT,
-                ua.getId(),
-                AuditAction.LOGIN,
-                "User logged in: " + ua.getUsername(),
-                null,
-                null,
-                ua.getUsername(),
-                ua.getId()
-        );
-        return ResponseEntity.ok(new AuthResponse(token, info, false));
+        boolean requiresTwoFactor = enforce2fa || ua.isTwoFactorEnabled();
+        if (!requiresTwoFactor) {
+            String token = jwtService.generateToken(ua);
+            auditLogService.logActionAsUser(
+                    EntityType.USER_ACCOUNT,
+                    ua.getId(),
+                    AuditAction.LOGIN,
+                    "User logged in: " + ua.getUsername(),
+                    null,
+                    null,
+                    ua.getUsername(),
+                    ua.getId()
+            );
+            return ResponseEntity.ok(new AuthResponse(token, info, false));
+        }
+        String code = twoFactorAuthService.dispatchCode(ua);
+        return ResponseEntity.ok(new AuthResponse(return2faCode ? code : "", info, true));
     }
 
     @PostMapping("/logout")
@@ -103,28 +111,21 @@ public class AuthController {
     @PostMapping("/forgot-password")
     public ResponseEntity<ForgotPasswordResponse> forgotPassword(@Valid @RequestBody PasswordResetRequest request) {
         String token = verificationService.generateResetToken(request.getEmail());
-        boolean emailSent = true;
         try {
             mailService.send(request.getEmail(), "Password reset instructions",
                     "Use this token to reset your password within the next hour: " + token);
         } catch (ResponseStatusException ex) {
-            emailSent = false;
-        }
-
-        if (emailSent) {
-            return ResponseEntity.ok(new ForgotPasswordResponse(
-                    "If an account exists for this email, reset instructions were sent.",
-                    returnResetToken ? token : null,
-                    true
+            return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(new ForgotPasswordResponse(
+                    "SMTP delivery failed. Check mail configuration and retry.",
+                    null,
+                    false
             ));
         }
 
         return ResponseEntity.ok(new ForgotPasswordResponse(
-                returnResetToken
-                        ? "Email delivery is unavailable right now. Use the reset code below."
-                        : "Email delivery is unavailable right now. Please try again later.",
+                "If an account exists for this email, reset instructions were sent.",
                 returnResetToken ? token : null,
-                false
+                true
         ));
     }
 

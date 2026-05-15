@@ -21,7 +21,11 @@ const LoginPage: React.FC = () => {
     setSubmitting(true);
     setError(null);
     try {
-      await login({ username: username.trim(), password });
+      const result = await login({ username: username.trim(), password });
+      if (result === "2FA") {
+        toast.info(t("auth.twoFaRequired"));
+        return navigate("/2fa");
+      }
       navigate("/");
     } catch (error) {
       const backendMessage = axios.isAxiosError(error)

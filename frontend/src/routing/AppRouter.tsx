@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import LoginPage from "../pages/auth/LoginPage";
 import ForgotPasswordPage from "../pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "../pages/auth/ResetPasswordPage";
+import TwoFactorPage from "../pages/auth/TwoFactorPage";
 import SignupPage from "../pages/auth/SignupPage";
 import DashboardPage from "../pages/dashboard/DashboardPage";
 import PersonListPage from "../pages/persons/PersonListPage";
@@ -32,7 +33,11 @@ const adminOnly = ["ADMIN"];
 const billsAuth = ["ADMIN", "PATIENT"];
 
 const Protected: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { token } = useAuth();
+  const { token, requires2fa } = useAuth();
+
+  if (requires2fa) {
+    return <Navigate to="/2fa" replace />;
+  }
 
   if (!token) {
     return <LoginPage />;
@@ -48,7 +53,7 @@ const AppRouter: React.FC = () => (
       <Route path="/login" element={<LoginPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/2fa" element={<Navigate to="/login" replace />} />
+      <Route path="/2fa" element={<TwoFactorPage />} />
       <Route path="/signup" element={<SignupPage />} />
 
       <Route

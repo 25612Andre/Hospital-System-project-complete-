@@ -29,7 +29,7 @@ class AuthControllerForgotPasswordTest {
     private MailService mailService;
 
     @Test
-    void shouldReturnResetTokenWhenMailDeliveryFails() throws Exception {
+    void shouldReturnServiceUnavailableWhenMailDeliveryFails() throws Exception {
         doThrow(new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "SMTP delivery failed. Check mail configuration and retry."))
                 .when(mailService)
                 .send(anyString(), anyString(), anyString());
@@ -41,9 +41,9 @@ class AuthControllerForgotPasswordTest {
                                   "email": "user@example.com"
                                 }
                                 """))
-                .andExpect(status().isOk())
+                .andExpect(status().isServiceUnavailable())
                 .andExpect(jsonPath("$.emailSent").value(false))
-                .andExpect(jsonPath("$.resetToken").isNotEmpty())
-                .andExpect(jsonPath("$.message").value("Email delivery is unavailable right now. Use the reset code below."));
+                .andExpect(jsonPath("$.resetToken").isEmpty())
+                .andExpect(jsonPath("$.message").value("SMTP delivery failed. Check mail configuration and retry."));
     }
 }

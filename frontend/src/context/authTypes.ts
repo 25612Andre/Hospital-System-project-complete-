@@ -10,7 +10,7 @@ export interface AuthState {
 }
 
 export interface AuthContextValue extends AuthState {
-  login: (payload: LoginPayload) => Promise<"OK">;
+  login: (payload: LoginPayload) => Promise<"OK" | "2FA">;
   verify2fa: (code: string) => Promise<void>;
   send2fa: (username: string) => Promise<void>;
   updateUser: (patch: Partial<AuthUser>) => void;
