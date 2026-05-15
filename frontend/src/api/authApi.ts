@@ -51,6 +51,11 @@ export interface TwoFactorSetupResponse {
   instructions: string;
 }
 
+export interface SignupResponse {
+  message: string;
+  redirectTo: string;
+}
+
 export const authApi = {
   login: async (payload: LoginPayload): Promise<LoginResponse> => {
     const { data } = await httpClient.post<LoginResponse>("/auth/login", payload);
@@ -94,7 +99,7 @@ export const authApi = {
     return data;
   },
 
-  signup: async (payload: SignupPayload, profilePicture?: File) => {
+  signup: async (payload: SignupPayload, profilePicture?: File): Promise<SignupResponse> => {
     const formData = new FormData();
 
     // Append each field individually for @ModelAttribute binding
@@ -116,7 +121,7 @@ export const authApi = {
       formData.append('profilePicture', profilePicture);
     }
 
-    const { data } = await httpClient.post("/auth/signup", formData, {
+    const { data } = await httpClient.post<SignupResponse>("/auth/signup", formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },

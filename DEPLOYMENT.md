@@ -29,10 +29,28 @@ Set these backend environment variables:
   - `SPRING_MAIL_PASSWORD`
   - `SPRING_MAIL_SMTP_AUTH`
   - `SPRING_MAIL_SMTP_STARTTLS`
+- Optional keep-alive vars (Render anti-sleep ping every 13 minutes):
+  - `APP_KEEPALIVE_ENABLED=true`
+  - `APP_KEEPALIVE_URL=https://<your-backend-domain>/api/health`
+  - `APP_KEEPALIVE_INTERVAL_MS=780000`
 
 After deploy, verify:
 
 - `https://<your-backend-domain>/api/health`
+
+## 1.1 Keep backend warm on Render (13 min)
+
+To reduce idle sleep risk on Render, enable backend self-ping:
+
+- `APP_KEEPALIVE_ENABLED=true`
+- `APP_KEEPALIVE_URL=https://<your-backend-domain>/api/health`
+- `APP_KEEPALIVE_INTERVAL_MS=780000` (13 minutes)
+
+This triggers a health request every 13 minutes from the running service.
+
+Optional external keep-alive (recommended): create a Render Cron Job using `render-keepalive-cron.yaml` and set:
+
+- `BACKEND_HEALTH_URL=https://<your-backend-domain>/api/health`
 
 ## 2. Link Frontend to Backend (Vercel)
 

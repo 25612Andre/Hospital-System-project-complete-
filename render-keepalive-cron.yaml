@@ -1,0 +1,9 @@
+services:
+  - type: cron
+    name: hospital-backend-keepalive
+    runtime: native
+    schedule: "*/13 * * * *"
+    startCommand: bash -lc 'curl -fsS "$BACKEND_HEALTH_URL" >/dev/null'
+    envVars:
+      - key: BACKEND_HEALTH_URL
+        sync: false

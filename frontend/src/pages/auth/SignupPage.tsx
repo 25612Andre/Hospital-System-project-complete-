@@ -39,7 +39,7 @@ const SignupPage: React.FC = () => {
     }
 
     try {
-      await authApi.signup({
+      const response = await authApi.signup({
         username: form.username,
         password: form.password,
         role: "PATIENT",
@@ -50,8 +50,8 @@ const SignupPage: React.FC = () => {
         locationId: form.locationId || undefined,
         locationName: form.locationName || undefined,
       }, profilePicture || undefined);
-      toast.success(t("signup.success"));
-      navigate("/login");
+      toast.success(response.message || t("signup.success"));
+      navigate(response.redirectTo || "/login");
     } catch (err) {
       const error = err as AxiosError<{ message?: string; error?: string }>;
       const msg = error.response?.data?.message || error.response?.data?.error || error.message || "Signup failed.";

@@ -2,6 +2,7 @@ package com.example.hospitalmanagement.service;
 
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -11,13 +12,18 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class EmailService {
 
-    private final JavaMailSender mailSender;
+    private final ObjectProvider<JavaMailSender> mailSenderProvider;
 
     public void sendNewAppointmentEmail(String toDoctorEmail, String doctorName, String patientName, String dateStr) {
         if (toDoctorEmail == null || toDoctorEmail.isBlank()) {
             return;
         }
         try {
+            JavaMailSender mailSender = mailSenderProvider.getIfAvailable();
+            if (mailSender == null) {
+                log.warn("Skipping email to {} because JavaMailSender is not configured", toDoctorEmail);
+                return;
+            }
             SimpleMailMessage message = new SimpleMailMessage();
             message.setTo(toDoctorEmail);
             message.setSubject("New Appointment Request: " + patientName);

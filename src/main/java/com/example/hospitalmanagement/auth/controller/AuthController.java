@@ -3,6 +3,7 @@ package com.example.hospitalmanagement.auth.controller;
 import com.example.hospitalmanagement.auth.dto.AuthRequest;
 import com.example.hospitalmanagement.auth.dto.AuthResponse;
 import com.example.hospitalmanagement.auth.dto.PasswordResetRequest;
+import com.example.hospitalmanagement.auth.dto.SignupResponse;
 import com.example.hospitalmanagement.auth.dto.TwoFactorRequest;
 import com.example.hospitalmanagement.auth.dto.TwoFactorSetupRequest;
 import com.example.hospitalmanagement.auth.dto.TwoFactorSetupResponse;
@@ -19,6 +20,7 @@ import com.example.hospitalmanagement.security.JwtService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -194,14 +196,15 @@ public class AuthController {
     }
 
     @PostMapping(value = "/signup", consumes = {"multipart/form-data"})
-    public ResponseEntity<UserAccount> signup(
+    public ResponseEntity<SignupResponse> signup(
             @Valid @NonNull @org.springframework.web.bind.annotation.ModelAttribute UserAccountRequest request,
             @org.springframework.web.bind.annotation.RequestParam(value = "profilePicture", required = false) 
             org.springframework.web.multipart.MultipartFile profilePicture) {
         // Enforce PATIENT role for public signup.
         // Doctors and Admins must be created by an existing Admin.
         request.setRole(com.example.hospitalmanagement.model.enums.Role.PATIENT);
-        UserAccount created = userAccountService.create(request, profilePicture);
-        return ResponseEntity.ok(created);
+        userAccountService.create(request, profilePicture);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(new SignupResponse("Account created successfully.", "/login"));
     }
 }
