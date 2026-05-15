@@ -20,7 +20,7 @@ const PersonDetailPage: React.FC = () => {
 
   const { data: appointments } = useQuery({
     queryKey: ["patient-appointments", personId],
-    queryFn: () => appointmentApi.listPage({ patientId: personId, sort: "appointmentDate,desc", size: 50 }),
+    queryFn: () => appointmentApi.listByPatient(personId),
     enabled: !!personId,
   });
 
@@ -104,13 +104,15 @@ const PersonDetailPage: React.FC = () => {
           {t("personDetail.medicalHistory")}
         </h3>
 
-        {!appointments?.content || appointments.content.length === 0 ? (
+        {!appointments || appointments.length === 0 ? (
           <div className="p-10 text-center bg-white border border-dashed rounded-3xl text-slate-400 font-medium">
             {t("personDetail.noConsultations")}
           </div>
         ) : (
           <div className="space-y-4">
-            {appointments.content.map((apt: Appointment) => (
+            {[...appointments]
+              .sort((a, b) => new Date(b.appointmentDate).getTime() - new Date(a.appointmentDate).getTime())
+              .map((apt: Appointment) => (
               <div key={apt.id} className="bg-white border rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-3">
                   <div className="flex gap-4 items-center">

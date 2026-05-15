@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.NonNull;
+import java.security.Principal;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -84,16 +85,29 @@ public class AuthController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(@org.springframework.web.bind.annotation.RequestHeader(value = "Authorization", required = false) String token) {
-        String username = "UNKNOWN";
-        Long userId = 0L;
+    public ResponseEntity<String> logout(
+            @org.springframework.web.bind.annotation.RequestHeader(value = "Authorization", required = false) String token,
+            Principal principal
+    ) {
+        String username = null;
+        Long userId = null;
         try {
             if (token != null && token.startsWith("Bearer ")) {
                 username = jwtService.extractUsername(token.substring(7));
-                userId = userAccountService.findOptional(username).map(UserAccount::getId).orElse(0L);
+            } else if (principal != null && principal.getName() != null && !principal.getName().isBlank()) {
+                username = principal.getName();
             }
-        } catch (Exception ex) {}
-        
+            if (username != null && !username.isBlank()) {
+                userId = userAccountService.findOptional(username).map(UserAccount::getId).orElse(null);
+            }
+        } catch (Exception ex) {
+            // Best effort logout audit, do not fail logout response.
+        }
+
+        if (username == null || username.isBlank() || userId == null) {
+            return ResponseEntity.ok("Logged out");
+        }
+
         auditLogService.logActionAsUser(
                 EntityType.USER_ACCOUNT,
                 userId,
@@ -104,7 +118,7 @@ public class AuthController {
                 username,
                 userId
         );
-            
+
         return ResponseEntity.ok("Logged out");
     }
 

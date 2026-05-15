@@ -25,6 +25,8 @@ public interface LocationRepository extends JpaRepository<Location, Long>, JpaSp
     Optional<Location> findByCodeIgnoreCase(String code);
     
     Optional<Location> findByNameIgnoreCase(String name);
+    
+    List<Location> findAllByNameIgnoreCase(String name);
 
     List<Location> findByParentId(Long parentId);
 

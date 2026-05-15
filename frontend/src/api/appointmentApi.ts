@@ -33,6 +33,10 @@ export const appointmentApi = {
     });
     return data;
   },
+  listByPatient: async (patientId: number) => {
+    const { data } = await httpClient.get<Appointment[]>(`/appointments/patient/${patientId}`);
+    return data;
+  },
   create: async (payload: AppointmentPayload) => {
     const { data } = await httpClient.post<Appointment>("/appointments", payload);
     return data;

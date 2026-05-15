@@ -251,18 +251,11 @@ public class UserAccountService {
 
     private Location resolveLocation(UserAccountRequest req) {
         if (req.getLocationId() != null) {
-            return locationRepository.findById(req.getLocationId()).orElse(null);
+            return locationRepository.findById(req.getLocationId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Location not found"));
         }
         if (req.getLocationName() != null && !req.getLocationName().isBlank()) {
-            String name = req.getLocationName().trim();
-            return locationRepository.findByNameIgnoreCase(name)
-                    .orElseGet(() -> {
-                        Location loc = new Location();
-                        loc.setName(name);
-                        loc.setCode(name.toUpperCase().replaceAll("\\s+", "_") + "-" + System.currentTimeMillis());
-                        loc.setType(LocationType.PROVINCE); // Default to a flat type
-                        return locationRepository.save(loc);
-                    });
+            return locationService.ensureLocationByName(req.getLocationName().trim());
         }
         return null;
     }

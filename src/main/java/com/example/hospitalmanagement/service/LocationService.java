@@ -9,10 +9,12 @@ import jakarta.persistence.criteria.Predicate;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -230,19 +232,20 @@ public class LocationService {
     }
 
     /**
-     * Find or create a flat location by name.
+     * Resolve an existing location by name.
+     * New locations must be created through the locations management UI/API, not implicitly from user forms.
      */
     public Location ensureLocationByName(String name) {
         if (name == null || name.isBlank()) return null;
         String trimmed = name.trim();
-        return repository.findByNameIgnoreCase(trimmed)
-                .orElseGet(() -> {
-                    Location loc = new Location();
-                    loc.setName(trimmed);
-                    loc.setCode(trimmed.toUpperCase().replaceAll("\\s+", "_") + "-" + System.currentTimeMillis());
-                    loc.setType(LocationType.PROVINCE); // Use PROVINCE as the base type for flat locations
-                    return repository.save(loc);
-                });
+        List<Location> matches = repository.findAllByNameIgnoreCase(trimmed);
+        if (matches.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Location not found. Please select a city from the list.");
+        }
+        if (matches.size() > 1) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Multiple locations match this name. Please select a city from the list.");
+        }
+        return matches.get(0);
     }
 
     // ==================== Helper Methods ====================

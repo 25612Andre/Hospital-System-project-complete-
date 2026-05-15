@@ -4,6 +4,7 @@ import AppButton from "../../components/common/AppButton";
 import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { personApi } from "../../api/personApi";
 import type { Person } from "../../api/personApi";
+import HierarchicalLocationPicker from "../../components/common/HierarchicalLocationPicker";
 import { toast } from "react-toastify";
 
 type FieldKey = "fullName" | "age" | "gender" | "email" | "phone";
@@ -27,7 +28,7 @@ const PersonFormPage: React.FC = () => {
   const { id } = useParams();
   const isEdit = Boolean(id);
   const [loading, setLoading] = useState(isEdit);
-  const [locationName, setLocationName] = useState("");
+  const [locationId, setLocationId] = useState<number | null>(null);
   const [form, setForm] = useState<Person>({
     fullName: "",
     age: 0,
@@ -41,7 +42,7 @@ const PersonFormPage: React.FC = () => {
     if (!isEdit || !id) return;
     personApi.getById(Number(id)).then((data) => {
       setForm(data);
-      setLocationName(data.location?.name ?? "");
+      setLocationId(data.location?.id ?? null);
     }).finally(() => setLoading(false));
   }, [id, isEdit]);
 
@@ -49,7 +50,8 @@ const PersonFormPage: React.FC = () => {
     e.preventDefault();
     const payload: Person = {
       ...form,
-      locationName: locationName.trim(),
+      location: locationId ? { id: locationId } : undefined,
+      locationName: undefined,
     };
     try {
       if (isEdit && id) {
@@ -109,12 +111,10 @@ const PersonFormPage: React.FC = () => {
         </div>
 
         <div className="border-t pt-4">
-          <label className="block text-sm font-medium mb-1 text-slate-700">Location</label>
-          <input
-            className="w-full border border-slate-300 rounded-lg px-3 py-2 outline-none"
-            placeholder="Enter city, district, or hospital area..."
-            value={locationName}
-            onChange={(e) => setLocationName(e.target.value)}
+          <HierarchicalLocationPicker
+            value={locationId}
+            onChange={(id) => setLocationId(id)}
+            label="Location (select city from list)"
           />
         </div>
 

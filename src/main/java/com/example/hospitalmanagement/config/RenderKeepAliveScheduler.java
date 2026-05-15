@@ -24,14 +24,29 @@ public class RenderKeepAliveScheduler {
     @Value("${app.keepalive.url:}")
     private String keepAliveUrl;
 
+    @Value("${RENDER_EXTERNAL_URL:}")
+    private String renderExternalUrl;
+
     @Scheduled(fixedDelayString = "${app.keepalive.interval-ms:780000}")
     public void pingBackend() {
-        if (!keepAliveEnabled || keepAliveUrl == null || keepAliveUrl.isBlank()) {
+        if (!keepAliveEnabled) {
+            return;
+        }
+
+        String targetUrl = keepAliveUrl;
+        if ((targetUrl == null || targetUrl.isBlank())
+                && renderExternalUrl != null
+                && !renderExternalUrl.isBlank()) {
+            targetUrl = renderExternalUrl.endsWith("/")
+                    ? renderExternalUrl + "actuator/health"
+                    : renderExternalUrl + "/actuator/health";
+        }
+        if (targetUrl == null || targetUrl.isBlank()) {
             return;
         }
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(keepAliveUrl))
+                    .uri(URI.create(targetUrl))
                     .timeout(Duration.ofSeconds(10))
                     .GET()
                     .build();

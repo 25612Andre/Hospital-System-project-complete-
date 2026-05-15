@@ -6,6 +6,7 @@ import AppButton from "../../components/common/AppButton";
 import { toast } from "react-toastify";
 import LanguageSelect from "../../components/common/LanguageSelect";
 import { useI18n } from "../../i18n/I18nProvider";
+import HierarchicalLocationPicker from "../../components/common/HierarchicalLocationPicker";
 
 const SignupPage: React.FC = () => {
   const navigate = useNavigate();
@@ -37,6 +38,10 @@ const SignupPage: React.FC = () => {
       toast.error(t("signup.validation.patientDetails"));
       return;
     }
+    if (!form.locationId) {
+      toast.error("Please select your city from the location list.");
+      return;
+    }
 
     try {
       const response = await authApi.signup({
@@ -48,7 +53,6 @@ const SignupPage: React.FC = () => {
         age: Number(form.age),
         gender: form.gender,
         locationId: form.locationId || undefined,
-        locationName: form.locationName || undefined,
       }, profilePicture || undefined);
       toast.success(response.message || t("signup.success"));
       navigate(response.redirectTo || "/login");
@@ -216,12 +220,17 @@ const SignupPage: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-slate-700 mb-1">{t("common.location")} ({t("common.optional") || "Optional"})</label>
-            <input
-              className="w-full border rounded px-3 py-2 text-sm"
-              value={form.locationName || ""}
-              onChange={(e) => setForm({ ...form, locationName: e.target.value })}
-              placeholder="Enter your city or area..."
+            <HierarchicalLocationPicker
+              value={form.locationId}
+              onChange={(locationId, location) =>
+                setForm({
+                  ...form,
+                  locationId,
+                  locationName: location?.path || location?.name || "",
+                })
+              }
+              label={`${t("common.location")} (City)`}
+              required
             />
           </div>
         </div>
