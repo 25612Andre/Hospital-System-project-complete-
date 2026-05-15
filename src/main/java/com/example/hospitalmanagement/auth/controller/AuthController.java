@@ -42,9 +42,6 @@ public class AuthController {
     private final JwtService jwtService;
     private final AuditLogService auditLogService;
 
-    @Value("${app.auth.enforce-2fa:false}")
-    private boolean enforce2fa;
-
     @Value("${app.auth.return-2fa-code:false}")
     private boolean return2faCode;
 
@@ -64,23 +61,18 @@ public class AuthController {
                 doctorId,
                 ua.getProfilePictureUrl()
         );
-        boolean requiresTwoFactor = enforce2fa || ua.isTwoFactorEnabled();
-        if (!requiresTwoFactor) {
-            String token = jwtService.generateToken(ua);
-            auditLogService.logActionAsUser(
-                    EntityType.USER_ACCOUNT,
-                    ua.getId(),
-                    AuditAction.LOGIN,
-                    "User logged in: " + ua.getUsername(),
-                    null,
-                    null,
-                    ua.getUsername(),
-                    ua.getId()
-            );
-            return ResponseEntity.ok(new AuthResponse(token, info, false));
-        }
-        String code = twoFactorAuthService.dispatchCode(ua);
-        return ResponseEntity.ok(new AuthResponse(return2faCode ? code : "", info, true));
+        String token = jwtService.generateToken(ua);
+        auditLogService.logActionAsUser(
+                EntityType.USER_ACCOUNT,
+                ua.getId(),
+                AuditAction.LOGIN,
+                "User logged in: " + ua.getUsername(),
+                null,
+                null,
+                ua.getUsername(),
+                ua.getId()
+        );
+        return ResponseEntity.ok(new AuthResponse(token, info, false));
     }
 
     @PostMapping("/logout")
