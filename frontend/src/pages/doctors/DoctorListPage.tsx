@@ -20,6 +20,7 @@ const emptyForm: Doctor = {
   contact: "",
   specialization: "",
   biography: "",
+  videoUrl: "",
   department: undefined,
   location: undefined,
   locationName: "",
@@ -80,6 +81,7 @@ const DoctorListPage: React.FC = () => {
       if (editingId) {
         const payload: Doctor = {
           ...form,
+          videoUrl: form.videoUrl?.trim() || "",
           department: { id: Number(form.department.id), name: form.department.name },
           location: form.location?.id ? { id: form.location.id } : undefined,
         };
@@ -102,6 +104,7 @@ const DoctorListPage: React.FC = () => {
           phone: form.contact,
           specialization: form.specialization,
           biography: form.biography,
+          videoUrl: form.videoUrl,
           departmentId: form.department.id,
           locationName: form.locationName
         }, profilePicture || undefined);
@@ -123,6 +126,7 @@ const DoctorListPage: React.FC = () => {
       contact: doc.contact,
       specialization: doc.specialization,
       biography: doc.biography || "",
+      videoUrl: doc.videoUrl || "",
       department: doc.department ? { id: doc.department.id, name: doc.department.name } : undefined,
       location: doc.location ? { id: doc.location.id } : undefined,
       locationName: doc.location?.name || "",
@@ -294,6 +298,15 @@ const DoctorListPage: React.FC = () => {
               rows={4}
               value={form.biography || ""}
               onChange={(e) => setForm({ ...form, biography: e.target.value })}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <label className="block text-sm mb-1">Video URL</label>
+            <input
+              className="w-full border rounded px-3 py-2"
+              value={form.videoUrl || ""}
+              onChange={(e) => setForm({ ...form, videoUrl: e.target.value })}
+              placeholder="https://www.youtube.com/watch?v=..."
             />
           </div>
           <div>

@@ -473,6 +473,9 @@ public class UserAccountService {
                 newDoctor.setContact(req.getPhone());
                 newDoctor.setSpecialization(req.getSpecialization() != null ? req.getSpecialization() : department.getName());
                 newDoctor.setBiography(req.getBiography());
+                if (hasText(req.getVideoUrl())) {
+                    newDoctor.setVideoUrl(req.getVideoUrl().trim());
+                }
                 newDoctor.setDepartment(department);
                 newDoctor.setLocation(doctorLocation != null ? doctorLocation : location);
                 newDoctor.setProfilePictureUrl(profilePictureUrl);

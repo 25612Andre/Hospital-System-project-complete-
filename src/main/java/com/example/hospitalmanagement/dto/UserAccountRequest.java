@@ -37,5 +37,6 @@ public class UserAccountRequest {
     private Long departmentId;
     private String specialization;
     private String biography;
+    private String videoUrl;
     private String locationName;
 }
