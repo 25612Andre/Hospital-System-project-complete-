@@ -6,18 +6,25 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CompletableFuture;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TwoFactorAuthService {
 
     private static final Duration CODE_TTL = Duration.ofMinutes(10);
     private final MailService mailService;
     private final SecureRandom random = new SecureRandom();
     private final Map<String, CodeEntry> pendingCodes = new ConcurrentHashMap<>();
+    
+    @Value("${app.auth.twofa-dispatch-async:true}")
+    private boolean asyncDispatch;
 
     public String dispatchCode(UserAccount user) {
         if (user == null) {
@@ -41,11 +48,23 @@ Use the verification code %s to finish signing in. The code expires in %d minute
 
 If you did not initiate this request you can ignore this email.
 """.formatted(entry.code, CODE_TTL.toMinutes());
-        try {
-            mailService.send(username, subject, body);
-        } catch (ResponseStatusException ex) {
-            pendingCodes.remove(normalized);
-            throw ex;
+
+        if (asyncDispatch) {
+            CompletableFuture.runAsync(() -> {
+                try {
+                    mailService.send(username, subject, body);
+                } catch (ResponseStatusException ex) {
+                    pendingCodes.remove(normalized);
+                    log.warn("2FA email dispatch failed for {}: {}", username, ex.getReason());
+                }
+            });
+        } else {
+            try {
+                mailService.send(username, subject, body);
+            } catch (ResponseStatusException ex) {
+                pendingCodes.remove(normalized);
+                throw ex;
+            }
         }
         return entry.code;
     }
